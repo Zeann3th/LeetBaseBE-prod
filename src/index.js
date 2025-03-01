@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import router from './routes/index.js';
 import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
+import rateLimit from 'express-rate-limit';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -29,7 +30,12 @@ app.get("/healthz", (req, res) => {
   res.status(200).json({ message: "Server is Healthy" });
 });
 
-app.use("/v1", router);
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 100,
+  legacyHeaders: false
+})
+app.use("/v1", limiter, router);
 
 mongoose.connect(process.env.MONGO_URI, {
   dbName: process.env.MONGO_DB_NAME

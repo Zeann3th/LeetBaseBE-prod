@@ -23,8 +23,17 @@ class Env {
 
 new Env({
   PORT: true,
+  // MONGODB
   MONGO_URI: true,
   MONGO_DB_NAME: true,
+  // JWT
   TOKEN_SECRET: true,
   REFRESH_TOKEN_SECRET: true,
+  // SMTP
+  SMTP_HOST: true,
+  SMTP_EMAIL: true,
+  SMTP_PASSWORD: true,
+  // EMAIL CONFIRMATION ENCRYPTION
+  ENCRYPTION_KEY: true,
+  ENCRYPTION_IV: true,
 })

@@ -7,6 +7,7 @@ import router from './routes/index.js';
 import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
 import rateLimit from 'express-rate-limit';
+import morgan from 'morgan';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -25,6 +26,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Cookies
 app.use(cookieParser());
+
+// Logger
+app.use(morgan(":method :url :status - :response-time ms"))
 
 // Endpoints
 app.get("/healthz", (req, res) => {

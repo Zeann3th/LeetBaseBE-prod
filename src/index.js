@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import './env.js';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -40,15 +41,14 @@ app.use("/v1", limiter, router);
 mongoose.connect(process.env.MONGO_URI, {
   dbName: process.env.MONGO_DB_NAME
 }).then(() => {
-  console.log(`
+  app.listen(port, () => {
+    console.log(`
     \x1b[35m\n 🚀 LeetClone 0.1.0\n\x1b[0m
     - Local:\thttp://localhost:${port}/
     
     Note that the development build is not optimized.
     To create a production build, use \x1b[32mnpm run start\x1b[0m.\n
   `);
-  app.listen(port, () => {
-    console.log('Server is running on port 3000');
   })
 }).catch((error) => {
   console.log('Error: ', error);

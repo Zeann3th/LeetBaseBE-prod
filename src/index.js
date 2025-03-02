@@ -43,7 +43,7 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => {
   app.listen(port, () => {
     console.log(`
-    \x1b[35m\n 🚀 LeetClone 0.1.0\n\x1b[0m
+    \x1b[35m\n 🚀 LeetBase 0.1.0\n\x1b[0m
     - Local:\thttp://localhost:${port}/
     
     Note that the development build is not optimized.

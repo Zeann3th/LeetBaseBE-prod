@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import Auth from "../models/Auth.js";
 import bcrypt from "bcrypt";
+import { decrypt, encrypt } from "../utils.js";
 
 const saltRounds = 10;
 
@@ -21,14 +22,49 @@ const handleRegister = async (req, res) => {
   }
 
   const hashedPassword = await bcrypt.hash(password, saltRounds);
-  const newUser = new Auth({ username, password: hashedPassword, email });
+  const emailVerificationToken = encrypt(`${crypto.randomBytes(64).toString("hex")}.${new Date(Date.now() + 24 * 60 * 60 * 1000)}`);
+  const newUser = new Auth({
+    username,
+    password: hashedPassword,
+    email,
+    emailVerificationToken
+  });
 
   try {
     await newUser.save();
+    //TODO: Send mail
     return res.status(201).json({ message: "User created successfully" });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
+}
+
+const handleVerifyEmail = async (req, res) => {
+  const hashedToken = req.params.token;
+  try {
+    const token = decrypt(hashedToken);
+
+    const [_, expiresAt] = token.split(".");
+    if (new Date(expiresAt) < new Date()) {
+      return res.status(400).json({ message: "Token has expired" });
+    }
+
+    const user = await Auth.findOneAndUpdate(
+      { emailVerificationToken: { $eq: hashedToken } },
+      { isEmailVerified: true, emailVerificationToken: null }
+    );
+    if (!user) {
+      return res.status(404).json({ message: "User not found or Invalid token" });
+    }
+
+    return res.status(200).json({ message: "Email verified successfully" });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+}
+
+const handleResendEmail = async (req, res) => {
+  //TODO: Send email
 }
 
 const handleLogin = async (req, res) => {
@@ -99,6 +135,14 @@ const handleRefresh = async (req, res) => {
 
     return res.status(200).json({ accessToken });
   } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Refresh token expired' });
+    }
+
+    if (err.name === 'JsonWebTokenError') {
+      return res.status(403).json({ message: 'Invalid refresh token' });
+    }
+
     return res.status(500).json({ message: err.message });
   }
 }
@@ -124,6 +168,8 @@ const AuthController = {
   handleLogin,
   handleRefresh,
   handleLogout,
+  handleVerifyEmail,
+  handleResendEmail
 }
 
 export default AuthController;

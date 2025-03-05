@@ -1,6 +1,5 @@
+import { Router } from "express";
 import SubmissionController from "../controllers/submission.controller.js";
-
-const { Router } = require("express");
 
 const router = Router();
 

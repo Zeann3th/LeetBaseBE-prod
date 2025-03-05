@@ -1,5 +1,10 @@
 const isProduction = process.env.NODE_ENV === "production";
 
+const isValidId = (id) => {
+  const idPattern = /^[a-zA-Z0-9_-]+$/;
+  return idPattern.test(id);
+};
+
 class TwoWayMap {
   constructor(map) {
     this.map = map;
@@ -17,4 +22,4 @@ class TwoWayMap {
   }
 }
 
-export { isProduction, TwoWayMap };
+export { isProduction, TwoWayMap, isValidId };

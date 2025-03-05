@@ -64,7 +64,7 @@ const update = async (req, res) => {
   }
 
   if (title) {
-    const existingProblem = await Problem.findOne({ title });
+    const existingProblem = await Problem.findOne({ title: { $eq: title } });
     if (existingProblem && existingProblem._id.toString() !== id) {
       return res.status(409).json({ message: "Problem with this title already exists" });
     }

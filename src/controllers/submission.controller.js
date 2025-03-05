@@ -12,7 +12,7 @@ const languages = new TwoWayMap({
 });
 
 const getById = async (req, res) => {
-  const { id } = req.params.id;
+  const { id } = req.params;
 
   const options = {
     method: "GET",

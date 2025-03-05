@@ -1,22 +1,17 @@
-FROM node:22-alpine AS build
+FROM node:22-alpine
 
 WORKDIR /app
 
-COPY package.json /app/
+COPY package*.json ./
 
-RUN npm install --omit=dev
+RUN npm ci --omit=dev && \
+    npm cache clean --force
 
 COPY . .
 
-FROM node:22-alpine AS production
-
-WORKDIR /app
-
-COPY --from=build /app/node_modules /app/node_modules
-COPY --from=build /app/package.json /app/package.json
-COPY --from=build /app/src /app/src 
-
 EXPOSE 7554
+
+ENV NODE_ENV=production
 
 CMD ["npm", "start"]
 

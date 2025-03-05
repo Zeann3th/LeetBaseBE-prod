@@ -3,11 +3,11 @@ import './env.js';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import router from './routes/index.js';
-import cookieParser from 'cookie-parser';
-import mongoose from 'mongoose';
-import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
+import { ipLimiter } from './middlewares/ratelimit.js';
+import router from './routes/index.js';
+import mongoose from 'mongoose';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -35,12 +35,7 @@ app.get("/healthz", (req, res) => {
   res.status(200).json({ message: "Server is Healthy" });
 });
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 100,
-  legacyHeaders: false
-})
-app.use("/v1", limiter, router);
+app.use("/v1", ipLimiter, router);
 
 mongoose.connect(process.env.MONGO_URI, {
   dbName: process.env.MONGO_DB_NAME

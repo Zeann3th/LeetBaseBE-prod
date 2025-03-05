@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import { decrypt, encrypt } from "../utils.js";
 
 const saltRounds = 10;
+const isProduction = process.env.NODE_ENV === "production";
 
 const register = async (req, res) => {
   const { username, password, email } = req.body;
@@ -101,7 +102,7 @@ const login = async (req, res) => {
 
     await user.updateOne({ refreshToken, isAuthenticated: true });
 
-    res.cookie("jwt", refreshToken, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
+    res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: isProduction, maxAge: 24 * 60 * 60 * 1000 });
     return res.status(200).json({ accessToken });
   } catch (err) {
     return res.status(500).json({ message: err.message });
@@ -109,7 +110,7 @@ const login = async (req, res) => {
 }
 
 const refresh = async (req, res) => {
-  const refreshToken = req.cookies.jwt;
+  const refreshToken = req.cookies.refresh_token;
 
   if (!refreshToken) {
     return res.status(401).json({ message: "Refresh Token is required" });
@@ -144,7 +145,7 @@ const refresh = async (req, res) => {
 }
 
 const logout = async (req, res) => {
-  const refreshToken = req.cookies.jwt;
+  const refreshToken = req.cookies.refresh_token;
 
   if (!refreshToken) {
     return res.status(204).send();
@@ -155,7 +156,7 @@ const logout = async (req, res) => {
     await user.updateOne({ refreshToken: null, isAuthenticated: false });
   }
 
-  res.clearCookie("jwt");
+  res.clearCookie("refresh_token", { httpOnly: true, secure: isProduction });
   return res.status(204).send();
 }
 

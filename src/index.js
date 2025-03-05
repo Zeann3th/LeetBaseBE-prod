@@ -8,7 +8,6 @@ import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
-import lusca from 'lusca';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -27,7 +26,6 @@ app.use(express.urlencoded({ extended: true }));
 
 // Cookies
 app.use(cookieParser());
-app.use(lusca.csrf());
 
 // Logger
 app.use(morgan(":method :url :status - :response-time ms"))

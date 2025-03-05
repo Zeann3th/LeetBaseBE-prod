@@ -31,8 +31,11 @@ export const verifyAdmin = (req, res, next) => {
 }
 
 export const verifyCsrf = (req, res, next) => {
+  if (req.method === "GET") {
+    return next();
+  }
   if (req.headers["x-csrf-token"] !== req.cookies["_csrf"]) {
-    return res.status(403).send({ message: "Unauthorized" });
+    return res.status(403).send({ message: "CSRF token mismatch" });
   }
   return next();
 }

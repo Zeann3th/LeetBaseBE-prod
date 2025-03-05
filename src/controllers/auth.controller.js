@@ -5,7 +5,7 @@ import { decrypt, encrypt } from "../utils.js";
 
 const saltRounds = 10;
 
-const handleRegister = async (req, res) => {
+const register = async (req, res) => {
   const { username, password, email } = req.body;
   if (!username || !password || !email) {
     return res.status(400).json({ message: "Missing required fields in payload" });
@@ -22,24 +22,21 @@ const handleRegister = async (req, res) => {
   }
 
   const hashedPassword = await bcrypt.hash(password, saltRounds);
-  const emailVerificationToken = encrypt(`${crypto.randomBytes(64).toString("hex")}.${new Date(Date.now() + 24 * 60 * 60 * 1000)}`);
   const newUser = new Auth({
     username,
     password: hashedPassword,
     email,
-    emailVerificationToken
   });
 
   try {
     await newUser.save();
-    //TODO: Send mail
     return res.status(201).json({ message: "User created successfully" });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
 }
 
-const handleVerifyEmail = async (req, res) => {
+const verifyEmail = async (req, res) => {
   const hashedToken = req.params.token;
   try {
     const token = decrypt(hashedToken);
@@ -63,11 +60,10 @@ const handleVerifyEmail = async (req, res) => {
   }
 }
 
-const handleResendEmail = async (req, res) => {
-  //TODO: Send email
+const resendEmail = async (req, res) => {
 }
 
-const handleLogin = async (req, res) => {
+const login = async (req, res) => {
   const { username, email, password } = req.body;
   const identifier = username || email;
 
@@ -92,18 +88,18 @@ const handleLogin = async (req, res) => {
     }
 
     const accessToken = jwt.sign(
-      { username: user.username, role: user.role },
+      { sub: user._id, username: user.username, role: user.role },
       process.env.TOKEN_SECRET,
       { expiresIn: "15m" }
     );
 
     const refreshToken = jwt.sign(
-      { username: user.username, role: user.role },
+      { sub: user._id, username: user.username, role: user.role },
       process.env.REFRESH_TOKEN_SECRET,
       { expiresIn: "1d" }
     );
 
-    await user.updateOne({ refreshToken });
+    await user.updateOne({ refreshToken, isAuthenticated: true });
 
     res.cookie("jwt", refreshToken, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
     return res.status(200).json({ accessToken });
@@ -112,7 +108,7 @@ const handleLogin = async (req, res) => {
   }
 }
 
-const handleRefresh = async (req, res) => {
+const refresh = async (req, res) => {
   const refreshToken = req.cookies.jwt;
 
   if (!refreshToken) {
@@ -128,7 +124,7 @@ const handleRefresh = async (req, res) => {
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
 
     const accessToken = jwt.sign(
-      { username: decoded.username, role: decoded.role },
+      { sub: decoded._id, username: decoded.username, role: decoded.role },
       process.env.TOKEN_SECRET,
       { expiresIn: "15m" }
     );
@@ -147,7 +143,7 @@ const handleRefresh = async (req, res) => {
   }
 }
 
-const handleLogout = async (req, res) => {
+const logout = async (req, res) => {
   const refreshToken = req.cookies.jwt;
 
   if (!refreshToken) {
@@ -156,7 +152,7 @@ const handleLogout = async (req, res) => {
 
   const user = await Auth.findOne({ refreshToken: { $eq: refreshToken } });
   if (user) {
-    await user.updateOne({ refreshToken: null });
+    await user.updateOne({ refreshToken: null, isAuthenticated: false });
   }
 
   res.clearCookie("jwt");
@@ -164,12 +160,12 @@ const handleLogout = async (req, res) => {
 }
 
 const AuthController = {
-  handleRegister,
-  handleLogin,
-  handleRefresh,
-  handleLogout,
-  handleVerifyEmail,
-  handleResendEmail
+  register,
+  login,
+  refresh,
+  logout,
+  verifyEmail,
+  resendEmail
 }
 
 export default AuthController;

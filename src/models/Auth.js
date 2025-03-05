@@ -24,12 +24,9 @@ const authSchema = new mongoose.Schema({
   refreshToken: {
     type: String,
   },
-  isEmailVerified: {
+  isAuthenticated: {
     type: Boolean,
     default: false,
-  },
-  emailVerificationToken: {
-    type: String,
   },
 },
   { timestamps: true }

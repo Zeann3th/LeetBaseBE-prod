@@ -3,18 +3,18 @@ import AuthController from "../controllers/auth.controller.js";
 
 const router = Router();
 
-router.post("/register", AuthController.handleRegister); // Email service needed
+router.post("/register", AuthController.register);
 
-router.get("/verify-email", AuthController.handleVerifyEmail);
+router.get("/verify-email", AuthController.verifyEmail);
 
-router.post("/resend-email", AuthController.handleResendEmail); // Email service needed
+router.post("/resend-email", AuthController.resendEmail);
 
-router.post("/login", AuthController.handleLogin);
+router.post("/login", AuthController.login);
 
-router.get("/refresh", AuthController.handleRefresh);
+router.get("/refresh", AuthController.refresh);
 
 router.patch("/credentials");
 
-router.get("/logout", AuthController.handleLogout);
+router.get("/logout", AuthController.logout);
 
 export { router as AuthRouter };

@@ -33,7 +33,4 @@ new Env({
   SMTP_HOST: true,
   SMTP_EMAIL: true,
   SMTP_PASSWORD: true,
-  // EMAIL CONFIRMATION ENCRYPTION
-  ENCRYPTION_KEY: true,
-  ENCRYPTION_IV: true,
 })

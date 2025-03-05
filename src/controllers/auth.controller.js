@@ -1,10 +1,10 @@
 import jwt from "jsonwebtoken";
 import Auth from "../models/Auth.js";
 import bcrypt from "bcrypt";
-import { decrypt, encrypt } from "../utils.js";
+import { isProduction } from "../utils.js";
+import { sendVerifyEmail, sendRecoveryEmail } from "../services/smtp.js";
 
 const saltRounds = 10;
-const isProduction = process.env.NODE_ENV === "production";
 
 const register = async (req, res) => {
   const { username, password, email } = req.body;
@@ -23,14 +23,14 @@ const register = async (req, res) => {
   }
 
   const hashedPassword = await bcrypt.hash(password, saltRounds);
-  const newUser = new Auth({
-    username,
-    password: hashedPassword,
-    email,
-  });
 
   try {
-    await newUser.save();
+    await Auth.save({
+      username,
+      password: hashedPassword,
+      email,
+    });
+    sendVerifyEmail(email);
     return res.status(201).json({ message: "User created successfully" });
   } catch (err) {
     return res.status(500).json({ message: err.message });
@@ -38,23 +38,17 @@ const register = async (req, res) => {
 }
 
 const verifyEmail = async (req, res) => {
-  const hashedToken = req.params.token;
+  const pin = "get-from-redis";
+  if (!pin) {
+    return res.status(400).json({ message: "Invalid or expired pin" });
+  }
+
   try {
-    const token = decrypt(hashedToken);
-
-    const [_, expiresAt] = token.split(".");
-    if (new Date(expiresAt) < new Date()) {
-      return res.status(400).json({ message: "Token has expired" });
+    if (req.body.pin !== pin) {
+      return res.status(400).json({ message: "Invalid or expired pin" });
     }
 
-    const user = await Auth.findOneAndUpdate(
-      { emailVerificationToken: { $eq: hashedToken } },
-      { isEmailVerified: true, emailVerificationToken: null }
-    );
-    if (!user) {
-      return res.status(404).json({ message: "User not found or Invalid token" });
-    }
-
+    await Auth.findOneAndUpdate({ email: { $eq: req.body.email } }, { isVerified: true });
     return res.status(200).json({ message: "Email verified successfully" });
   } catch (err) {
     return res.status(500).json({ message: err.message });
@@ -62,6 +56,26 @@ const verifyEmail = async (req, res) => {
 }
 
 const resendEmail = async (req, res) => {
+  const action = req.query.action;
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Missing required fields in payload" });
+  }
+
+  try {
+    if (action === "verify") {
+      sendVerifyEmail(email);
+    } else if (action === "recover") {
+      sendRecoveryEmail(email);
+    } else {
+      return res.status(400).json({ message: "Invalid action" });
+    }
+
+    return res.status(200).json({ message: "Email sent successfully" });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
 }
 
 const login = async (req, res) => {
@@ -88,22 +102,29 @@ const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid password" });
     }
 
+    const payload = { sub: user._id, username: user.username, role: user.role };
+
     const accessToken = jwt.sign(
-      { sub: user._id, username: user.username, role: user.role },
+      payload,
       process.env.TOKEN_SECRET,
       { expiresIn: "15m" }
     );
 
     const refreshToken = jwt.sign(
-      { sub: user._id, username: user.username, role: user.role },
+      payload,
       process.env.REFRESH_TOKEN_SECRET,
       { expiresIn: "1d" }
     );
 
+    const csrfToken = crypto.randomUUID();
+
     await user.updateOne({ refreshToken, isAuthenticated: true });
 
-    res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: isProduction, maxAge: 24 * 60 * 60 * 1000 });
-    return res.status(200).json({ accessToken });
+    const cookieOptions = { httpOnly: true, secure: isProduction };
+
+    res.cookie("refresh_token", refreshToken, { ...cookieOptions, maxAge: 24 * 60 * 60 * 1000 });
+    res.cookie("_csrf", csrfToken, cookieOptions);
+    return res.status(200).json({ accessToken, csrfToken });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
@@ -119,7 +140,7 @@ const refresh = async (req, res) => {
   try {
     const user = await Auth.findOne({ refreshToken: { $eq: refreshToken } });
     if (!user) {
-      return res.status(403).json({ message: "Refresh Token is invalid" });
+      return res.status(403).json({ message: "Invalid refresh tokend" });
     }
 
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
@@ -156,7 +177,10 @@ const logout = async (req, res) => {
     await user.updateOne({ refreshToken: null, isAuthenticated: false });
   }
 
-  res.clearCookie("refresh_token", { httpOnly: true, secure: isProduction });
+  const cookieOptions = { httpOnly: true, secure: isProduction };
+
+  res.clearCookie("refresh_token", cookieOptions);
+  res.clearCookie("_csrf", cookieOptions);
   return res.status(204).send();
 }
 

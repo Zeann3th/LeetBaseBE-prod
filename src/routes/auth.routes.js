@@ -5,7 +5,7 @@ const router = Router();
 
 router.post("/register", AuthController.register);
 
-router.get("/verify-email", AuthController.verifyEmail);
+router.post("/verify-email", AuthController.verifyEmail);
 
 router.post("/resend-email", AuthController.resendEmail);
 

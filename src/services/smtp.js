@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import "dotenv/config";
+import cache from "./cache.js";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -11,18 +12,21 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+const generateOTP = () => {
+  return crypto.randomInt(100000, 999999);
+}
+
 const sendVerifyEmail = async (addr) => {
-  const pin = Math.floor(100000 + Math.random() * 900000);
+  const pin = generateOTP();
   try {
-    // Save to Redis
-    //
-    // Send email
-    const mail = await transporter.sendMail({
+    const tmp = cache.set(`verify:${addr}`, pin)
+    const mail = transporter.sendMail({
       from: `"LeetBase" <${process.env.SMTP_SENDER}>`,
       to: `${addr}`,
       subject: "Welcome to LeetBase! Confirm your email",
       html: `<!DOCTYPE html>
 <html>
+
 <head>
   <style>
     body {
@@ -35,6 +39,7 @@ const sendVerifyEmail = async (addr) => {
       align-items: center;
       min-height: 100vh;
     }
+
     .container {
       background: #ffffff;
       padding: 40px;
@@ -42,13 +47,16 @@ const sendVerifyEmail = async (addr) => {
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       text-align: center;
     }
+
     h1 {
       color: #333;
     }
+
     p {
       font-size: 18px;
       color: #555;
     }
+
     .pin {
       font-size: 32px;
       font-weight: bold;
@@ -59,6 +67,7 @@ const sendVerifyEmail = async (addr) => {
       border-radius: 8px;
       margin: 20px 0;
     }
+
     .copy-btn {
       background: #4CAF50;
       color: white;
@@ -69,11 +78,13 @@ const sendVerifyEmail = async (addr) => {
       cursor: pointer;
       transition: background 0.3s ease;
     }
+
     .copy-btn:hover {
       background: #45a049;
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <h1>Welcome to LeetBase!</h1>
@@ -94,9 +105,11 @@ const sendVerifyEmail = async (addr) => {
     }
   </script>
 </body>
+
 </html>`,
     });
-    console.log("Message sent: %s", mail.messageId);
+    await Promise.all([tmp, mail]);
+    console.log("[SMTP]: Message sent: %s", mail.messageId);
   } catch (error) {
     throw new Error(`Error sending email to ${addr}`);
   }
@@ -104,12 +117,14 @@ const sendVerifyEmail = async (addr) => {
 
 const sendRecoveryEmail = async (addr) => {
   try {
-    const mail = await transporter.sendMail({
+    const tmp = cache.set(`recover:${addr}`, generateOTP());
+    const mail = transporter.sendMail({
       from: `"LeetBase" <${process.env.SMTP_SENDER}>`,
       to: `${addr}`,
       subject: "LeetBase Password Recovery",
       html: "<b>Hello world?</b>",
     });
+    await Promise.all([tmp, mail]);
   } catch (error) {
     throw new Error(`Error sending email to ${addr}`);
   }

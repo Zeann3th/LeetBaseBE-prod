@@ -42,8 +42,9 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => {
   app.listen(port, () => {
     console.log(`
-    \x1b[35m\n 🚀 LeetBase 0.1.0\n\x1b[0m
+    \x1b[35m\n 🚀 LeetBase 0.1.1\n\x1b[0m
     - Local:\thttp://localhost:${port}/
+    - Documentation:\tOopsie! No documentation yet.
     
     Note that the development build is not optimized.
     To create a production build, use \x1b[32mnpm run start\x1b[0m.\n

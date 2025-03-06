@@ -9,11 +9,13 @@ export const verifyToken = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token.split(" ")[1], process.env.TOKEN_SECRET);
-    // E.g: User logs out, refresh token = null but access token may still be valid
-    // => Make sure isAuthenticated is true before doing
-    const isAuthenticated = await Auth.findOne({ _id: { $eq: decoded.sub }, isAuthenticated: { $eq: true }, isEmailVerified: { $eq: true } });
-    if (!isAuthenticated) {
+
+    const user = await Auth.findById(decoded.sub);
+    if (!user.isAuthenticated) {
       return res.status(401).send({ message: "User is not authenticated" });
+    }
+    if (!user.isEmailVerified) {
+      return res.status(403).send({ message: "Email is not verified" });
     }
 
     req.user = decoded;

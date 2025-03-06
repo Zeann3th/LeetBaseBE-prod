@@ -33,4 +33,6 @@ new Env({
   SMTP_HOST: true,
   SMTP_EMAIL: true,
   SMTP_PASSWORD: true,
+  // Cache
+  REDIS_URL: true,
 })

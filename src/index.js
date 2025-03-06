@@ -10,7 +10,7 @@ import router from './routes/index.js';
 import mongoose from 'mongoose';
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8000;
 
 // Security
 app.use(cors({
@@ -42,7 +42,7 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => {
   app.listen(port, () => {
     console.log(`
-    \x1b[35m\n 🚀 LeetBase 0.1.0\n\x1b[0m
+    \x1b[35m\n 🚀 LeetBase 0.1.1\n\x1b[0m
     - Local:\thttp://localhost:${port}/
     
     Note that the development build is not optimized.

@@ -1,24 +1,57 @@
 import Problem from "../models/Problem.js";
+import cache from "../services/cache.js";
+import { sanitize } from "../utils.js";
 
 const getAll = async (req, res) => {
-  const limit = req.query.limit ? parseInt(req.query.limit) : 10;
-  const page = req.query.page ? parseInt(req.query.page) : 1;
+  const limit = sanitize(req.query.limit, "number") || 10;
+  const page = sanitize(req.query.page, "number") || 1;
 
-  const problems = await Problem.find().limit(limit).skip((page - 1) * limit);
+  const key = `problems:${limit}:${page}`;
 
-  return res.status(200).json(problems);
+  try {
+    if (req.headers["Cache-Control"] !== "no-cache") {
+      const cachedProblems = await cache.get(key);
+      if (cachedProblems) {
+        return res.status(200).json(JSON.parse(cachedProblems));
+      }
+    }
+
+    const problems = await Problem.find().limit(limit).skip((page - 1) * limit);
+    await cache.set(key, JSON.stringify(problems), "EX", 600);
+
+    return res.status(200).json(problems);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
 }
 
 const getById = async (req, res) => {
-  const id = req.params.id;
-
-  const problem = await Problem.findById(id);
-
-  if (!problem) {
-    return res.status(404).json({ message: "Problem not found" });
+  const id = sanitize(req.params.id, "mongo");
+  if (!id) {
+    return res.status(400).json({ message: "Missing path id" });
   }
 
-  return res.status(200).json(problem);
+  const key = `problem:${id}`;
+
+  try {
+    if (req.headers["Cache-Control"] !== "no-cache") {
+      const cachedProblem = await cache.get(key);
+      if (cachedProblem) {
+        return res.status(200).json(JSON.parse(cachedProblem));
+      }
+    }
+
+    const problem = await Problem.findById(id);
+    if (!problem) {
+      return res.status(404).json({ message: "Problem not found" });
+    }
+
+    await cache.set(key, JSON.stringify(problem), "EX", 600);
+
+    return res.status(200).json(problem);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
 }
 
 const create = async (req, res) => {
@@ -48,7 +81,11 @@ const create = async (req, res) => {
 }
 
 const update = async (req, res) => {
-  const id = req.params.id;
+  const id = sanitize(req.params.id, "mongo");
+  if (!id) {
+    return res.status(400).json({ message: "Missing path id" });
+  }
+
   const { title, description, difficulty, tags, testCases } = req.body;
 
   const request = {
@@ -81,9 +118,11 @@ const update = async (req, res) => {
   }
 };
 
-
 const remove = async (req, res) => {
-  const id = req.params.id;
+  const id = sanitize(req.params.id, "mongo");
+  if (!id) {
+    return res.status(400).json({ message: "Missing path id" });
+  }
 
   const problem = await Problem.findByIdAndDelete(id);
 
@@ -91,6 +130,7 @@ const remove = async (req, res) => {
     return res.status(404).json({ message: "Problem not found" });
   }
 
+  await cache.del(`problem:${id}`);
   return res.status(204).send();
 }
 

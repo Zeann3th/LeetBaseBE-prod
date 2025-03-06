@@ -13,7 +13,7 @@ router.post("/login", AuthController.login);
 
 router.get("/refresh", AuthController.refresh);
 
-router.patch("/credentials");
+router.patch("/credentials", AuthController.update);
 
 router.get("/logout", AuthController.logout);
 

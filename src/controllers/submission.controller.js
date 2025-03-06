@@ -1,5 +1,5 @@
 import axios from "axios";
-import { isValidId, TwoWayMap } from "../utils.js";
+import { sanitize, TwoWayMap } from "../utils.js";
 
 const languages = new TwoWayMap({
   103: "C",
@@ -12,8 +12,8 @@ const languages = new TwoWayMap({
 });
 
 const getById = async (req, res) => {
-  const { id } = req.params;
-  if (isValidId(id) === false) {
+  const id = sanitize(req.params.id, "uuid");
+  if (!id) {
     return res.status(400).json({ message: "Invalid Submission Id" });
   }
 

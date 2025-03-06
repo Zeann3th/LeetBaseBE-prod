@@ -1,8 +1,9 @@
 import jwt from "jsonwebtoken";
 import Auth from "../models/Auth.js";
 import bcrypt from "bcrypt";
-import { isProduction } from "../utils.js";
+import { isProduction, sanitize } from "../utils.js";
 import { sendVerifyEmail, sendRecoveryEmail } from "../services/smtp.js";
+import cache from "../services/cache.js";
 
 const saltRounds = 10;
 
@@ -38,17 +39,27 @@ const register = async (req, res) => {
 }
 
 const verifyEmail = async (req, res) => {
-  const pin = "get-from-redis";
-  if (!pin) {
-    return res.status(400).json({ message: "Invalid or expired pin" });
+  const pin = sanitize(req.body.pin, "number");
+  const email = sanitize(req.body.email, "email");
+
+  if (!pin || !email) {
+    return res.status(400).json({ message: "Missing required fields in payload" });
   }
 
   try {
-    if (req.body.pin !== pin) {
+    const cachedPin = await cache.get(`verify:${req.body.email}`);
+    if (!cachedPin) {
       return res.status(400).json({ message: "Invalid or expired pin" });
     }
 
-    await Auth.findOneAndUpdate({ email: { $eq: req.body.email } }, { isVerified: true });
+    if (req.body.pin !== cachedPin) {
+      return res.status(400).json({ message: "Invalid or expired pin" });
+    }
+
+    await Promise.all([
+      Auth.findOneAndUpdate({ email: { $eq: req.body.email } }, { isVerified: true }),
+      cache.del(`verify:${req.body.email}`)
+    ]);
     return res.status(200).json({ message: "Email verified successfully" });
   } catch (err) {
     return res.status(500).json({ message: err.message });
@@ -56,18 +67,19 @@ const verifyEmail = async (req, res) => {
 }
 
 const resendEmail = async (req, res) => {
-  const action = req.query.action;
-  const { email } = req.body;
+  const action = sanitize(req.query.action, "string");
+  const email = sanitize(req.body.email, "email");
 
-  if (!email) {
+  if (!email || !action) {
     return res.status(400).json({ message: "Missing required fields in payload" });
   }
 
   try {
+    action = action.toLowerCase();
     if (action === "verify") {
-      sendVerifyEmail(email);
+      await sendVerifyEmail(email);
     } else if (action === "recover") {
-      sendRecoveryEmail(email);
+      await sendRecoveryEmail(email);
     } else {
       return res.status(400).json({ message: "Invalid action" });
     }
@@ -184,13 +196,18 @@ const logout = async (req, res) => {
   return res.status(204).send();
 }
 
+const update = async (req, res) => {
+
+}
+
 const AuthController = {
   register,
   login,
   refresh,
   logout,
   verifyEmail,
-  resendEmail
+  resendEmail,
+  update,
 }
 
 export default AuthController;

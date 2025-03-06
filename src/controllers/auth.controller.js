@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import Auth from "../models/Auth.js";
 import bcrypt from "bcrypt";
-import { isProduction } from "../utils.js";
+import { isProduction, sanitize } from "../utils.js";
 import { sendVerifyEmail, sendRecoveryEmail } from "../services/smtp.js";
 import cache from "../services/cache.js";
 
@@ -39,7 +39,8 @@ const register = async (req, res) => {
 }
 
 const verifyEmail = async (req, res) => {
-  const { pin, email } = req.body;
+  const pin = sanitize(req.body.pin, "number");
+  const email = sanitize(req.body.email, "email");
 
   if (!pin || !email) {
     return res.status(400).json({ message: "Missing required fields in payload" });
@@ -66,10 +67,10 @@ const verifyEmail = async (req, res) => {
 }
 
 const resendEmail = async (req, res) => {
-  const action = req.query.action;
-  const { email } = req.body;
+  const action = sanitize(req.query.action, "string");
+  const email = sanitize(req.body.email, "email");
 
-  if (!email) {
+  if (!email || !action) {
     return res.status(400).json({ message: "Missing required fields in payload" });
   }
 

@@ -24,11 +24,36 @@ const sendVerifyEmail = async (addr) => {
       from: `"LeetBase" <${process.env.SMTP_SENDER}>`,
       to: `${addr}`,
       subject: "Welcome to LeetBase! Confirm your email",
-      html: `<!DOCTYPE html>
-<html>
+      html: ` <!DOCTYPE html><html><head>${css}</head><body><div class="container"><h1>Welcome to LeetBase!</h1><p>Thank you for signing up. Please confirm your email using the verification code below:</p><div class="pin">${pin}</div><p>If you didn’t sign up for LeetBase, please ignore this email.</p></div></body></html>`,
+    });
 
-<head>
-  <style>
+    await Promise.all([tmp, mail]);
+    console.log("[SMTP]: Verify Message sent: %s", mail.messageId);
+  } catch (error) {
+    throw new Error(`Error sending email to ${addr}`);
+  }
+}
+
+const sendResetPasswordEmail = async (addr) => {
+  const pin = generateOTP();
+  try {
+    const tmp = cache.set(`reset:${addr}`, pin);
+    const mail = transporter.sendMail({
+      from: `"LeetBase" <${process.env.SMTP_SENDER}>`,
+      to: `${addr}`,
+      subject: "LeetBase Password Reset Request",
+      html: `<!DOCTYPE html><html><head>${css}</head><body><div class="container"><h1>Reset Your LeetBase Password</h1><p>We received a request to reset your password. Use the verification code below to proceed:</p><div class="pin">${pin}</div><p>If you didn’t request a password reset, please ignore this email.</p></div></body></html>`
+    });
+
+    await Promise.all([tmp, mail]);
+    console.log("[SMTP]: Password Reset Message sent: %s", mail.messageId);
+  } catch (error) {
+    throw new Error(`Error sending password reset email to ${addr}`);
+  }
+}
+
+const css = `
+<style>
     body {
       font-family: Arial, sans-serif;
       background-color: #f4f4f4;
@@ -39,7 +64,6 @@ const sendVerifyEmail = async (addr) => {
       align-items: center;
       min-height: 100vh;
     }
-
     .container {
       background: #ffffff;
       padding: 40px;
@@ -47,16 +71,13 @@ const sendVerifyEmail = async (addr) => {
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       text-align: center;
     }
-
     h1 {
       color: #333;
     }
-
     p {
       font-size: 18px;
       color: #555;
     }
-
     .pin {
       font-size: 32px;
       font-weight: bold;
@@ -67,67 +88,7 @@ const sendVerifyEmail = async (addr) => {
       border-radius: 8px;
       margin: 20px 0;
     }
-
-    .copy-btn {
-      background: #4CAF50;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      font-size: 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-
-    .copy-btn:hover {
-      background: #45a049;
-    }
   </style>
-</head>
+`
 
-<body>
-  <div class="container">
-    <h1>Welcome to LeetBase!</h1>
-    <p>Thank you for signing up. Please confirm your email using the verification code below:</p>
-    <div class="pin">${pin}</div>
-    <button class="copy-btn" onclick="copyPin()">Copy to Clipboard</button>
-    <p>If you didn’t sign up for LeetBase, please ignore this email.</p>
-  </div>
-
-  <script>
-    function copyPin() {
-      const pin = document.querySelector('.pin').textContent;
-      navigator.clipboard.writeText(pin).then(() => {
-        alert('Verification code copied!');
-      }).catch(err => {
-        alert('Failed to copy code');
-      });
-    }
-  </script>
-</body>
-
-</html>`,
-    });
-    await Promise.all([tmp, mail]);
-    console.log("[SMTP]: Message sent: %s", mail.messageId);
-  } catch (error) {
-    throw new Error(`Error sending email to ${addr}`);
-  }
-}
-
-const sendRecoveryEmail = async (addr) => {
-  try {
-    const tmp = cache.set(`recover:${addr}`, generateOTP());
-    const mail = transporter.sendMail({
-      from: `"LeetBase" <${process.env.SMTP_SENDER}>`,
-      to: `${addr}`,
-      subject: "LeetBase Password Recovery",
-      html: "<b>Hello world?</b>",
-    });
-    await Promise.all([tmp, mail]);
-  } catch (error) {
-    throw new Error(`Error sending email to ${addr}`);
-  }
-}
-
-export { sendVerifyEmail, sendRecoveryEmail };
+export { sendVerifyEmail, sendResetPasswordEmail };

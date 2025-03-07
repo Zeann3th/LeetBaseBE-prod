@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import Auth from "../models/Auth.js";
 import bcrypt from "bcrypt";
 import { isProduction, sanitize } from "../utils.js";
-import { sendVerifyEmail, sendRecoveryEmail } from "../services/smtp.js";
+import { sendVerifyEmail, sendResetPasswordEmail } from "../services/smtp.js";
 import cache from "../services/cache.js";
 
 const saltRounds = 10;
@@ -47,7 +47,7 @@ const verifyEmail = async (req, res) => {
   }
 
   try {
-    const cachedPin = await cache.get(`verify:${req.body.email}`);
+    const cachedPin = await cache.get(`verify:${email}`);
     if (!cachedPin) {
       return res.status(400).json({ message: "Invalid or expired pin" });
     }
@@ -57,8 +57,8 @@ const verifyEmail = async (req, res) => {
     }
 
     await Promise.all([
-      Auth.findOneAndUpdate({ email: { $eq: req.body.email } }, { isVerified: true }),
-      cache.del(`verify:${req.body.email}`)
+      Auth.findOneAndUpdate({ email: { $eq: email } }, { isVerified: true }),
+      cache.del(`verify:${email}`)
     ]);
     return res.status(200).json({ message: "Email verified successfully" });
   } catch (err) {
@@ -68,7 +68,7 @@ const verifyEmail = async (req, res) => {
 
 const resendEmail = async (req, res) => {
   const action = sanitize(req.query.action, "string");
-  const email = sanitize(req.body.email, "email");
+  const email = sanitize(req.user.email, "email");
 
   if (!email || !action) {
     return res.status(400).json({ message: "Missing required fields in payload" });
@@ -78,8 +78,8 @@ const resendEmail = async (req, res) => {
     action = action.toLowerCase();
     if (action === "verify") {
       await sendVerifyEmail(email);
-    } else if (action === "recover") {
-      await sendRecoveryEmail(email);
+    } else if (action === "reset") {
+      await sendResetPasswordEmail(email);
     } else {
       return res.status(400).json({ message: "Invalid action" });
     }
@@ -114,7 +114,7 @@ const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid password" });
     }
 
-    const payload = { sub: user._id, username: user.username, role: user.role };
+    const payload = { sub: user._id, username: user.username, role: user.role, email: user.email };
 
     const accessToken = jwt.sign(
       payload,
@@ -158,7 +158,7 @@ const refresh = async (req, res) => {
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
 
     const accessToken = jwt.sign(
-      { sub: decoded._id, username: decoded.username, role: decoded.role },
+      { sub: decoded._id, username: decoded.username, role: decoded.role, email: decoded.email },
       process.env.TOKEN_SECRET,
       { expiresIn: "15m" }
     );
@@ -196,8 +196,50 @@ const logout = async (req, res) => {
   return res.status(204).send();
 }
 
-const update = async (req, res) => {
+const forgotPassword = async (req, res) => {
+  const email = sanitize(req.user.email, "email");
 
+  if (!email) {
+    return res.status(400).json({ message: "Missing required fields in payload" });
+  }
+
+  try {
+    const user = await Auth.findOne({ email: { $eq: email } });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    sendResetPasswordEmail(email);
+    return res.status(200).json({ message: "Email sent successfully" });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+}
+
+const resetPassword = async (req, res) => {
+  const email = sanitize(req.user.email, "email");
+  const pin = sanitize(req.body.pin, "number");
+  const password = sanitize(req.body.password, "string");
+
+  if (!pin || !email || !password) {
+    return res.status(400).json({ message: "Missing required fields in payload" });
+  }
+
+  try {
+    const cachedPin = await cache.get(`reset:${email}`);
+    if (!cachedPin || cachedPin !== pin) {
+      return res.status(400).json({ message: "Invalid or expired pin" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    await Promise.all([
+      Auth.findOneAndUpdate({ email: { $eq: email } }, { password: hashedPassword }),
+      cache.del(`reset:${email}`)
+    ]);
+    return res.status(200).json({ message: "Password reset successfully" });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
 }
 
 const AuthController = {
@@ -207,7 +249,8 @@ const AuthController = {
   logout,
   verifyEmail,
   resendEmail,
-  update,
+  forgotPassword,
+  resetPassword,
 }
 
 export default AuthController;

@@ -1,22 +1,21 @@
 import { Router } from "express";
+import { verifyUser } from "../middlewares/auth.js";
 import { AuthRouter } from "./auth.routes.js";
 import { UserRouter } from "./user.routes.js";
 import { ProblemRouter } from "./problem.routes.js";
 import { SubmissionRouter } from "./submission.routes.js";
-import { verifyCsrf, verifyToken } from "../middlewares/auth.js";
+import { SearchRouter } from "./search.routes.js";
 
 const router = Router();
 
-router.get("/", (req, res) => {
-  res.send("Hello World");
-});
-
 router.use("/auth", AuthRouter);
 
-router.use("/users", verifyToken, verifyCsrf, UserRouter);
+router.use("/users", verifyUser, UserRouter);
 
-router.use("/problems", verifyToken, verifyCsrf, ProblemRouter);
+router.use("/problems", verifyUser, ProblemRouter);
 
-router.use("/submissions", verifyToken, verifyCsrf, SubmissionRouter);
+router.use("/submissions", verifyUser, SubmissionRouter);
+
+router.use("/search", verifyUser, SearchRouter);
 
 export default router;

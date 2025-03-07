@@ -35,4 +35,6 @@ new Env({
   SMTP_PASSWORD: true,
   // Cache
   REDIS_URL: true,
+  // Judge0
+  RAPID_API_KEY: true
 })

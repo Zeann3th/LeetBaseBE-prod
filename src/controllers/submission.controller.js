@@ -25,8 +25,8 @@ const getById = async (req, res) => {
       fields: "*"
     },
     headers: {
-      "x-rapidapi-key": "",
-      "x-rapidapi-host": ""
+      "x-rapidapi-key": process.env.RAPID_API_KEY,
+      "x-rapidapi-host": "judge0-ce.p.rapidapi.com"
     }
   };
 
@@ -50,8 +50,8 @@ const create = async (req, res) => {
       fields: '*'
     },
     headers: {
-      "x-rapidapi-key": "",
-      "x-rapidapi-host": "",
+      "x-rapidapi-key": process.env.RAPID_API_KEY,
+      "x-rapidapi-host": "judge0-ce.p.rapidapi.com",
       "Content-Type": "application/json"
     },
     data: {

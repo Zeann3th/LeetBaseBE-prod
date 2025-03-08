@@ -2,8 +2,8 @@ import jwt from "jsonwebtoken";
 import Auth from "../models/Auth.js";
 import bcrypt from "bcrypt";
 import { isProduction, sanitize } from "../utils.js";
-import { sendVerifyEmail, sendResetPasswordEmail } from "../services/smtp.js";
 import cache from "../services/cache.js";
+import mail from "../services/mail.js";
 
 const saltRounds = 10;
 
@@ -31,7 +31,7 @@ const register = async (req, res) => {
       password: hashedPassword,
       email,
     });
-    sendVerifyEmail(email);
+    mail.sendVerifyEmail(email);
     return res.status(201).json({ message: "User created successfully" });
   } catch (err) {
     return res.status(500).json({ message: err.message });
@@ -39,7 +39,7 @@ const register = async (req, res) => {
 }
 
 const verifyEmail = async (req, res) => {
-  const pin = sanitize(req.body.pin, "number");
+  const pin = sanitize(req.body.pin, "string");
   const email = sanitize(req.body.email, "email");
 
   if (!pin || !email) {
@@ -48,7 +48,7 @@ const verifyEmail = async (req, res) => {
 
   try {
     let cachedPin = await cache.get(`verify:${email}`);
-    cachedPin = sanitize(cachedPin, "number");
+    cachedPin = sanitize(cachedPin, "string");
     if (!cachedPin) {
       return res.status(400).json({ message: "Invalid or expired pin" });
     }
@@ -68,8 +68,8 @@ const verifyEmail = async (req, res) => {
 }
 
 const resendEmail = async (req, res) => {
-  let action = sanitize(req.query.action, "string");
-  const email = sanitize(req.user.email, "email");
+  let action = sanitize(req.body.action, "string");
+  const email = sanitize(req.body.email, "email");
 
   if (!email || !action) {
     return res.status(400).json({ message: "Missing required fields in payload" });
@@ -78,9 +78,9 @@ const resendEmail = async (req, res) => {
   try {
     action = action.toLowerCase();
     if (action === "verify") {
-      await sendVerifyEmail(email);
+      await mail.sendVerifyEmail(email);
     } else if (action === "reset") {
-      await sendResetPasswordEmail(email);
+      await mail.sendResetPasswordEmail(email);
     } else {
       return res.status(400).json({ message: "Invalid action" });
     }
@@ -198,7 +198,7 @@ const logout = async (req, res) => {
 }
 
 const forgotPassword = async (req, res) => {
-  const email = sanitize(req.user.email, "email");
+  const email = sanitize(req.body.email, "email");
 
   if (!email) {
     return res.status(400).json({ message: "Missing required fields in payload" });
@@ -210,7 +210,7 @@ const forgotPassword = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    sendResetPasswordEmail(email);
+    mail.sendResetPasswordEmail(email);
     return res.status(200).json({ message: "Email sent successfully" });
   } catch (err) {
     return res.status(500).json({ message: err.message });
@@ -218,8 +218,8 @@ const forgotPassword = async (req, res) => {
 }
 
 const resetPassword = async (req, res) => {
-  const email = sanitize(req.user.email, "email");
-  const pin = sanitize(req.body.pin, "number");
+  const email = sanitize(req.body.email, "email");
+  const pin = sanitize(req.body.pin, "string");
   const password = sanitize(req.body.password, "string");
 
   if (!pin || !email || !password) {
@@ -228,7 +228,7 @@ const resetPassword = async (req, res) => {
 
   try {
     let cachedPin = await cache.get(`reset:${email}`);
-    cachedPin = sanitize(cachedPin, "number");
+    cachedPin = sanitize(cachedPin, "string");
     if (!cachedPin || cachedPin !== pin) {
       return res.status(400).json({ message: "Invalid or expired pin" });
     }

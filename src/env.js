@@ -36,5 +36,10 @@ new Env({
   // Cache
   REDIS_URL: true,
   // Judge0
-  RAPID_API_KEY: true
+  RAPID_API_KEY: true,
+  // Cloudflare R2
+  CF_ACCOUNT_ID: true,
+  CF_BUCKET: true,
+  CF_ACCESS_KEY_ID: true,
+  CF_SECRET_ACCESS_KEY: true,
 })

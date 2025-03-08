@@ -16,7 +16,6 @@ const languages = new TwoWayMap({
 
 const getById = async (req, res) => {
   const id = sanitize(req.params.id, "uuid");
-  console.log(id, typeof id);
   if (!id) {
     return res.status(400).json({ message: "Invalid Submission Id" });
   }
@@ -25,6 +24,8 @@ const getById = async (req, res) => {
     if (!submission) {
       return res.status(404).json({ message: "Submission not found" });
     }
+    console.log(submission.user);
+    console.log(req.user.sub);
     //if (submission.user.toString() !== req.user.sub) {
     //  return res.status(403).json({ message: "Unauthorized" });
     //}
@@ -80,7 +81,7 @@ const create = async (req, res) => {
       data: {
         language_id: languageId,
         source_code: btoa(submit),
-        callback_url: `${process.env.BASE_URL}/v1/submissions/callback`
+        callback_url: `${process.env.DNS}/v1/submissions/callback`
       }
     };
 

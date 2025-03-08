@@ -22,7 +22,7 @@ class Env {
 }
 
 new Env({
-  BASE_URL: true,
+  DNS: true,
   PORT: true,
   // MONGODB
   MONGO_URI: true,

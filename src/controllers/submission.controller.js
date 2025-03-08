@@ -104,22 +104,23 @@ const create = async (req, res) => {
 }
 
 const createCallback = async (req, res) => {
-  const { token: submissionId, status, stderr, time, memory } = req.body;
+  let { token: submissionId, status, stderr, time, memory } = req.body;
 
-  const sanitizedSubmissionId = sanitize(submissionId, "uuid");
   const statusId = sanitize(status?.id, "number");
-  const sanitizedTime = sanitize(time, "number");
-  const sanitizedMemory = sanitize(memory, "number");
+  submissionId = sanitize(submissionId, "uuid");
+  stderr = sanitize(stderr, "string");
+  time = sanitize(time, "number");
+  memory = sanitize(memory, "number");
 
-  if (!sanitizedSubmissionId || !statusId) {
+  if (!submissionId || !statusId) {
     return res.status(400).json({ message: "Invalid callback payload" });
   }
 
   const update = {
     status: statusId === 3 ? "ACCEPTED" : "WRONG_ANSWER",
     error: stderr,
-    runtime: sanitizedTime,
-    memory: sanitizedMemory,
+    runtime: time,
+    memory,
   };
 
   await Submission.findOneAndUpdate(

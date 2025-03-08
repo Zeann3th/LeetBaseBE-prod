@@ -124,7 +124,7 @@ const createCallback = async (req, res) => {
   };
 
   await Submission.findOneAndUpdate(
-    { submissionId: { $eq: sanitizedSubmissionId } },
+    { submissionId: { $eq: submissionId } },
     update
   );
 

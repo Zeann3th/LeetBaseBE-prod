@@ -5,6 +5,6 @@ const router = Router()
 
 router.get("/:term", SearchController.searchProblems)
 
-router.get("/:term/autocomplete", SearchController.autocompleteSearchProblems)
+// TODO: Search by tags, search users?
 
 export { router as SearchRouter }

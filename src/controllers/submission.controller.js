@@ -20,12 +20,13 @@ const getById = async (req, res) => {
     return res.status(400).json({ message: "Invalid Submission Id" });
   }
   try {
-    const submission = await Submission.find({ submissionId: { $eq: id } });
+    const submission = await Submission.findOne({ submissionId: { $eq: id } });
     if (!submission) {
       return res.status(404).json({ message: "Submission not found" });
     }
-    console.log(submission.user);
-    console.log(req.user.sub);
+    console.log(submission.user, typeof submission.user);
+    console.log(req.user.sub, typeof req.user.sub);
+    // Fix later
     //if (submission.user.toString() !== req.user.sub) {
     //  return res.status(403).json({ message: "Unauthorized" });
     //}
@@ -53,17 +54,20 @@ const create = async (req, res) => {
   }
 
   try {
-    const problem = await Problem.findById(problemId);
+    const [problem, template] = await Promise.all([
+      Problem.findById(sanitize(problemId, "mongo")),
+      s3.getDownloadUrl(`${problemId}/${language.toLowerCase()}`)
+    ]);
+
     if (!problem) {
       return res.status(404).json({ message: "Problem not found" });
     }
 
-    const template = await s3.getDownloadUrl(`${problemId}/${language.toLowerCase()}`);
     if (!template) {
       return res.status(404).json({ message: "Template not found" });
     }
 
-    const submit = template.replace(/\/\/--code--/g, atob(code));
+    const submit = template.replace(/\/\/--code--/g, Buffer.from(code, 'base64').toString());
 
     const options = {
       method: 'POST',
@@ -80,22 +84,52 @@ const create = async (req, res) => {
       },
       data: {
         language_id: languageId,
-        source_code: btoa(submit),
+        source_code: Buffer.from(submit).toString('base64'),
         callback_url: `${process.env.DNS}/v1/submissions/callback`
       }
     };
 
     const { data: { token: submissionId } } = await axios.request(options);
-    res.status(202).json({ submissionId });
+    console.log(req.user.sub);
+    const submission = await Submission.create({
+      submissionId,
+      user: req.user.sub,
+      problem: problemId,
+      language,
+    });
+    return res.status(202).json({ submissionId });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 }
 
 const createCallback = async (req, res) => {
-  console.log(req.body);
-  return res.status(200).json(req.body);
-}
+  let { token: submissionId, status, stderr, time, memory } = req.body;
+
+  const statusId = sanitize(status?.id, "number");
+  submissionId = sanitize(submissionId, "uuid");
+  stderr = sanitize(stderr, "string");
+  time = sanitize(time, "number");
+  memory = sanitize(memory, "number");
+
+  if (!submissionId || !statusId) {
+    return res.status(400).json({ message: "Invalid callback payload" });
+  }
+
+  const update = {
+    status: statusId === 3 ? "ACCEPTED" : "WRONG_ANSWER",
+    error: stderr,
+    runtime: time,
+    memory,
+  };
+
+  await Submission.findOneAndUpdate(
+    { submissionId: { $eq: sanitizedSubmissionId } },
+    update
+  );
+
+  res.status(204).send();
+};
 
 const SubmissionController = {
   getById,

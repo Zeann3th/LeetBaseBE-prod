@@ -38,36 +38,8 @@ const searchProblems = async (req, res) => {
   return res.status(200).send(problems);
 }
 
-const autocompleteSearchProblems = async (req, res) => {
-  const term = sanitize(req.params.term, "string");
-  if (!term) {
-    return res.status(400).send({ message: "Invalid search term" });
-  }
-
-  const problems = await Problem.aggregate([
-    {
-      "$search": {
-        "index": "problemsIdx",
-        "autocomplete": {
-          "query": term,
-          "path": "title",
-          "tokenOrder": "sequential",
-          "fuzzy": {}
-        }
-      }
-    }
-  ])
-
-  if (!problems) {
-    return res.status(404).send({ message: "No problems found" });
-  }
-
-  return res.status(200).send(problems);
-}
-
 const SearchController = {
   searchProblems,
-  autocompleteSearchProblems
 }
 
 export default SearchController;

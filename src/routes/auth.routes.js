@@ -17,7 +17,7 @@ router.get("/refresh", AuthController.refresh);
 // Needs user to logged in
 router.get("/forgot-password", verifyUser, AuthController.forgotPassword);
 
-router.patch("/reset-password", verifyUser, AuthController.resetPassword);
+router.post("/reset-password", verifyUser, AuthController.resetPassword);
 
 router.get("/resend-email", verifyUser, AuthController.resendEmail);
 

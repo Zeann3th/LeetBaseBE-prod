@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import "dotenv/config";
+import crypto from "crypto";
 import cache from "./cache.js";
 
 const transporter = nodemailer.createTransport({

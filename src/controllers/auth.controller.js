@@ -26,7 +26,7 @@ const register = async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, saltRounds);
 
   try {
-    await Auth.save({
+    await Auth.create({
       username,
       password: hashedPassword,
       email,
@@ -47,7 +47,8 @@ const verifyEmail = async (req, res) => {
   }
 
   try {
-    const cachedPin = await cache.get(`verify:${email}`);
+    let cachedPin = await cache.get(`verify:${email}`);
+    cachedPin = sanitize(cachedPin, "number");
     if (!cachedPin) {
       return res.status(400).json({ message: "Invalid or expired pin" });
     }
@@ -57,7 +58,7 @@ const verifyEmail = async (req, res) => {
     }
 
     await Promise.all([
-      Auth.findOneAndUpdate({ email: { $eq: email } }, { isVerified: true }),
+      Auth.findOneAndUpdate({ email: { $eq: email } }, { isEmailVerified: true }),
       cache.del(`verify:${email}`)
     ]);
     return res.status(200).json({ message: "Email verified successfully" });
@@ -67,7 +68,7 @@ const verifyEmail = async (req, res) => {
 }
 
 const resendEmail = async (req, res) => {
-  const action = sanitize(req.query.action, "string");
+  let action = sanitize(req.query.action, "string");
   const email = sanitize(req.user.email, "email");
 
   if (!email || !action) {
@@ -226,7 +227,8 @@ const resetPassword = async (req, res) => {
   }
 
   try {
-    const cachedPin = await cache.get(`reset:${email}`);
+    let cachedPin = await cache.get(`reset:${email}`);
+    cachedPin = sanitize(cachedPin, "number");
     if (!cachedPin || cachedPin !== pin) {
       return res.status(400).json({ message: "Invalid or expired pin" });
     }

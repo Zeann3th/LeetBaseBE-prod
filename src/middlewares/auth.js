@@ -20,7 +20,15 @@ export const verifyToken = async (req, res, next) => {
 
     req.user = decoded;
   } catch (err) {
-    return res.status(401).send({ message: "Invalid Token" });
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).send({ message: "Token has expired" });
+    } else if (err.name === "JsonWebTokenError") {
+      return res.status(401).send({ message: "Invalid token" });
+    } else if (err.name === "NotBeforeError") {
+      return res.status(401).send({ message: "Token is not yet active" });
+    }
+    return res.status(500).send({ message: "Authentication error" });
+    ;
   }
   return next();
 };
@@ -65,7 +73,14 @@ export const verifyUser = async (req, res, next) => {
     req.user = decoded;
 
   } catch (err) {
-    return res.status(401).send({ message: "Invalid Token" });
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).send({ message: "Token has expired" });
+    } else if (err.name === "JsonWebTokenError") {
+      return res.status(401).send({ message: "Invalid token" });
+    } else if (err.name === "NotBeforeError") {
+      return res.status(401).send({ message: "Token is not yet active" });
+    }
+    return res.status(500).send({ message: "Authentication error" });
   }
   return next();
-}
+};

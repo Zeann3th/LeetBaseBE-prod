@@ -22,6 +22,8 @@ class Env {
 }
 
 new Env({
+  // Deployment
+  RAILWAY_PUBLIC_DOMAIN: false,
   PORT: true,
   // MONGODB
   MONGO_URI: true,

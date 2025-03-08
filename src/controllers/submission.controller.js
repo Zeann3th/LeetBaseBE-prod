@@ -78,7 +78,7 @@ const create = async (req, res) => {
     data: {
       language_id: languageId,
       source_code: btoa(submit),
-      callback_url: `${process.env.BASE_URL}/v1/submissions/callback`
+      callback_url: `${process.env.RAILWAY_PUBLIC_DOMAIN}/v1/submissions/callback`
     }
   };
 

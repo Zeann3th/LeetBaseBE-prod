@@ -2,6 +2,7 @@ import axios from "axios";
 import { sanitize, TwoWayMap } from "../utils.js";
 import Problem from "../models/Problem.js";
 import s3 from "../services/storage.js";
+import Submission from "../models/Submission.js";
 
 const languages = new TwoWayMap({
   103: "c",
@@ -18,24 +19,18 @@ const getById = async (req, res) => {
   if (!id) {
     return res.status(400).json({ message: "Invalid Submission Id" });
   }
-
-  const options = {
-    method: "GET",
-    url: `https://judge0-ce.p.rapidapi.com/submissions/${id}`,
-    params: {
-      base64_encoded: "true",
-      fields: "*"
-    },
-    headers: {
-      "x-rapidapi-key": process.env.RAPID_API_KEY,
-      "x-rapidapi-host": "judge0-ce.p.rapidapi.com"
-    }
-  };
-
   try {
-    const { data } = await axios.request(options);
-    //TODO: Add entry to submissions collection and return the entry
-    return res.status(200).json(data);
+    const submission = await Submission.findById(id);
+    if (!submission) {
+      return res.status(404).json({ message: "Submission not found" });
+    }
+    if (submission.user.toString() !== req.user.sub) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    if (submission.status === "PENDING") {
+      return res.status(202).json({ message: "Submission is pending" });
+    }
+    return res.status(200).json(submission);
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -83,21 +78,32 @@ const create = async (req, res) => {
     data: {
       language_id: languageId,
       source_code: btoa(submit),
+      callback_url: `${process.env.BASE_URL}/v1/submissions/callback`
     }
   };
 
   try {
     const { data: { token: submissionId } } = await axios.request(options);
+    const submission = await Submission.create({
+      submissionId,
+      user: req.user.sub,
+      problem: problemId,
+      language,
+    })
     res.status(202).json({ submissionId });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+}
 
+const createCallback = async (req, res) => {
+  return res.status(200).json(req.body);
 }
 
 const SubmissionController = {
   getById,
-  create
+  create,
+  createCallback,
 };
 
 export default SubmissionController;

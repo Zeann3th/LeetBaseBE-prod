@@ -7,4 +7,6 @@ router.get("/:id", SubmissionController.getById);
 
 router.post("/", SubmissionController.create);
 
+router.put("/callback", SubmissionController.createCallback);
+
 export { router as SubmissionRouter };

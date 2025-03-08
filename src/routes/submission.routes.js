@@ -8,6 +8,7 @@ router.get("/:id", verifyUser, SubmissionController.getById);
 
 router.post("/", verifyUser, SubmissionController.create);
 
+// TODO: Needs to be secure
 router.put("/callback", SubmissionController.createCallback);
 
 export { router as SubmissionRouter };

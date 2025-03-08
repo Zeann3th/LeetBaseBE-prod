@@ -1,6 +1,7 @@
 import Problem from "../models/Problem.js";
 import cache from "../services/cache.js";
 import { sanitize } from "../utils.js";
+import s3 from "../services/storage.js";
 
 const getAll = async (req, res) => {
   const limit = sanitize(req.query.limit, "number") || 10;
@@ -55,9 +56,9 @@ const getById = async (req, res) => {
 }
 
 const create = async (req, res) => {
-  const { title, description, difficulty, tags, testCases } = req.body;
+  const { title, description, difficulty, tags } = req.body;
 
-  if (!title || !description || !difficulty || !tags || !testCases || !Array.isArray(tags) || tags.length === 0) {
+  if (!title || !description || !difficulty || !tags | !Array.isArray(tags) || tags.length === 0) {
     return res.status(400).json({ message: "Missing required fields in payload" });
   }
 
@@ -70,14 +71,33 @@ const create = async (req, res) => {
     await Problem.create({
       title,
       description,
-      difficulty,
+      difficulty: difficulty.toUpperCase(),
       tags,
-      testCases
     })
     return res.status(201).json({ message: "Problem created successfully" });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
+}
+
+const getUploadUrl = async (req, res) => {
+  const id = sanitize(req.params.id, "mongo");
+  const language = sanitize(req.body.language, "string");
+
+  if (!id) {
+    return res.status(400).json({ message: "Missing path id" });
+  }
+  if (!language) {
+    return res.status(400).json({ message: "Missing query language" });
+  }
+
+  const problem = await Problem.findById(id);
+  if (!problem) {
+    return res.status(404).json({ message: "Problem not found" });
+  }
+
+  const url = await s3.getSignedUploadURL(`${id}/${language.toLowerCase()}`);
+  return res.status(200).json({ url });
 }
 
 const update = async (req, res) => {
@@ -86,14 +106,13 @@ const update = async (req, res) => {
     return res.status(400).json({ message: "Missing path id" });
   }
 
-  const { title, description, difficulty, tags, testCases } = req.body;
+  const { title, description, difficulty, tags } = req.body;
 
   const request = {
     ...(title && { title }),
     ...(description && { description }),
-    ...(difficulty && { difficulty }),
+    ...(difficulty && { difficulty: difficulty.toUpperCase() }),
     ...(Array.isArray(tags) && tags.length > 0 && { tags }),
-    ...(testCases && { testCases }),
   };
 
   if (Object.keys(request).length === 0) {
@@ -138,6 +157,7 @@ const ProblemController = {
   getAll,
   getById,
   create,
+  getUploadUrl,
   update,
   remove
 }

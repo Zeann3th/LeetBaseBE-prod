@@ -10,6 +10,8 @@ router.get("/:id", ProblemController.getById)
 
 router.post("/", verifyAdmin, ProblemController.create)
 
+router.post("/:id/upload", verifyAdmin, ProblemController.getUploadUrl)
+
 router.patch("/:id", verifyAdmin, ProblemController.update)
 
 router.delete("/:id", verifyAdmin, ProblemController.remove)

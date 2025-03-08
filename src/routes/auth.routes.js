@@ -1,6 +1,6 @@
 import { Router } from "express";
 import AuthController from "../controllers/auth.controller.js";
-import { verifyUser } from "../middlewares/auth.js";
+import { emailLimiter } from "../middlewares/ratelimit.js";
 
 const router = Router();
 
@@ -14,12 +14,10 @@ router.get("/logout", AuthController.logout);
 
 router.get("/refresh", AuthController.refresh);
 
-// Needs user to logged in
-router.get("/forgot-password", verifyUser, AuthController.forgotPassword);
+router.post("/forgot-password", emailLimiter, AuthController.forgotPassword);
 
-router.patch("/reset-password", verifyUser, AuthController.resetPassword);
+router.post("/reset-password", emailLimiter, AuthController.resetPassword);
 
-router.get("/resend-email", verifyUser, AuthController.resendEmail);
-
+router.post("/resend-email", emailLimiter, AuthController.resendEmail);
 
 export { router as AuthRouter };

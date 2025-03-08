@@ -1,14 +1,16 @@
 import axios from "axios";
 import { sanitize, TwoWayMap } from "../utils.js";
+import Problem from "../models/Problem.js";
+import s3 from "../services/storage.js";
 
 const languages = new TwoWayMap({
-  103: "C",
-  105: "C++",
-  107: "Go",
-  91: "Java",
-  102: "Javascript",
-  98: "PHP",
-  100: "Python",
+  103: "c",
+  105: "cpp",
+  107: "go",
+  91: "java",
+  102: "javascript",
+  98: "php",
+  100: "python",
 });
 
 const getById = async (req, res) => {
@@ -40,7 +42,31 @@ const getById = async (req, res) => {
 }
 
 const create = async (req, res) => {
-  const { language, code, input } = req.body;
+  const problemId = sanitize(req.body.problemId, "mongo");
+  const language = sanitize(req.body.language, "string");
+  const code = req.body.code; // Base64
+
+  if (!problemId || !language || !code) {
+    return res.status(400).json({ message: "Missing required fields in payload" });
+  }
+
+  const languageId = languages.revGet(language.toLowerCase());
+  if (!languageId) {
+    return res.status(400).json({ message: "Invalid programming language" })
+  }
+
+  const problem = await Problem.findById(problemId);
+  if (!problem) {
+    return res.status(404).json({ message: "Problem not found" });
+  }
+
+  const template = await s3.getDownloadUrl(`${problemId}/${language.toLowerCase()}`);
+  if (!template) {
+    return res.status(404).json({ message: "Template not found" });
+  }
+
+  const submit = template.replace(/\/\/--code--/g, atob(code));
+
   const options = {
     method: 'POST',
     url: 'https://judge0-ce.p.rapidapi.com/submissions',
@@ -55,9 +81,8 @@ const create = async (req, res) => {
       "Content-Type": "application/json"
     },
     data: {
-      language_id: languages.revGet(language),
-      source_code: btoa(code),
-      stdin: btoa(input)
+      language_id: languageId,
+      source_code: btoa(submit),
     }
   };
 

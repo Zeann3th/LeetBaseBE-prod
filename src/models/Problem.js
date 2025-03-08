@@ -18,10 +18,6 @@ const problemSchema = new mongoose.Schema({
     type: [String],
     required: false,
   },
-  testCases: {
-    type: String,
-    required: true,
-  }
 });
 
 const Problem = mongoose.model("Problem", problemSchema);

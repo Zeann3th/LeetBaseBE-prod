@@ -40,6 +40,8 @@ const sanitize = (value, type) => {
       return validator.isEmail(value) ? value : null;
     case "mongo":
       return mongoose.Types.ObjectId.isValid(value) ? value : null;
+    case "url":
+      return validator.isURL(value) ? value : null;
     default:
       return null;
   }

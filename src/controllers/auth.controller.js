@@ -4,11 +4,13 @@ import bcrypt from "bcrypt";
 import { isProduction, sanitize } from "../utils.js";
 import cache from "../services/cache.js";
 import mail from "../services/mail.js";
+import User from "../models/User.js";
+import crypto from "crypto";
 
 const saltRounds = 10;
 
 const register = async (req, res) => {
-  const { username, password, email } = req.body;
+  const { username, password, email, name, avatar } = req.body;
   if (!username || !password || !email) {
     return res.status(400).json({ message: "Missing required fields in payload" });
   }
@@ -26,11 +28,23 @@ const register = async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, saltRounds);
 
   try {
-    await Auth.create({
+    const auth = await Auth.create({
       username,
       password: hashedPassword,
-      email,
+      email
     });
+
+    try {
+      await User.create({
+        _id: auth._id,
+        name: sanitize(name, "string") || "User" + crypto.randomUUID().slice(0, 5),
+        avatar: sanitize(avatar, "url") || null
+      });
+    } catch (err) {
+      await Auth.findByIdAndDelete(auth._id);
+      throw err;
+    }
+
     mail.sendVerifyEmail(email);
     return res.status(201).json({ message: "User created successfully" });
   } catch (err) {

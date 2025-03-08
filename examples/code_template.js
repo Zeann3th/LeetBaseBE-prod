@@ -26,18 +26,14 @@ function runTests() {
     const [nums1, m, nums2, n] = JSON.parse(JSON.stringify(input));
     merge(nums1, m, nums2, n);
     if (JSON.stringify(nums1) !== JSON.stringify(expected)) {
-      console.log(JSON.stringify({
-        status: 'FAILED',
-        progress: `${count}/${testCases.length}`,
-        input: input,
-        expected_output: expected,
-        user_output: nums1
-      }, null, 2));
-      return;
+      const error = new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(nums1)}`);
+      console.error(error);
+      throw error;
     }
     count++;
   }
-  console.log(JSON.stringify({ status: 'ACCEPTED', progress: `${count}/${testCases.length}` }));
+  console.log("All %d tests passed", count);
 }
 
 runTests();
+

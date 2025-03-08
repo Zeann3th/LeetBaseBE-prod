@@ -26,6 +26,7 @@ const getById = async (req, res) => {
     }
     console.log(submission.user, typeof submission.user);
     console.log(req.user.sub, typeof req.user.sub);
+    // Fix later
     //if (submission.user.toString() !== req.user.sub) {
     //  return res.status(403).json({ message: "Unauthorized" });
     //}
@@ -103,8 +104,9 @@ const create = async (req, res) => {
 }
 
 const createCallback = async (req, res) => {
-  const { token: submissionId, status, stderr, time, memory } = req.body;
-  if (!submissionId || !status) {
+  let { token: submissionId, status, stderr, time, memory } = req.body;
+  submissionId = sanitize(submissionId, "uuid");
+  if (!submissionId || !status || !status.id) {
     return res.status(400).json({ message: "Invalid callback payload" });
   }
 

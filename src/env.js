@@ -22,7 +22,6 @@ class Env {
 }
 
 new Env({
-  DNS: true,
   PORT: true,
   // MONGODB
   MONGO_URI: true,
@@ -36,11 +35,12 @@ new Env({
   SMTP_PASSWORD: true,
   // Cache
   REDIS_URL: true,
-  // Judge0
-  RAPID_API_KEY: true,
   // Cloudflare R2
   CF_ACCOUNT_ID: true,
   CF_BUCKET: true,
   CF_ACCESS_KEY_ID: true,
   CF_SECRET_ACCESS_KEY: true,
+  // Github OAuth
+  GH_CLIENT_ID: true,
+  GH_CLIENT_SECRET: true,
 })

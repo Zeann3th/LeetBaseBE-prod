@@ -10,6 +10,10 @@ router.post("/verify-email", AuthController.verifyEmail);
 
 router.post("/login", AuthController.login);
 
+router.get("/github", AuthController.redirectOAuth);
+
+router.get("/github/callback", AuthController.handleOAuthCallback);
+
 router.get("/logout", AuthController.logout);
 
 router.get("/refresh", AuthController.refresh);

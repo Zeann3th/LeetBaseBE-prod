@@ -1,15 +1,16 @@
 import { Router } from "express";
+import UserController from "../controllers/user.controller.js";
 
 const router = Router();
 
-router.get("/");
+router.get("/", UserController.getAll);
 
-router.get("/:id");
+router.get("/:id", UserController.getById);
 
-router.get("/profile");
+router.get("/profile", UserController.getProfile);
 
-router.patch("/profile");
+router.patch("/profile", UserController.update);
 
-router.get("/submissions");
+router.get("/submissions", UserController.getSubmissionHistory);
 
 export { router as UserRouter };

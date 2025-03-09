@@ -6,6 +6,7 @@ import cache from "../services/cache.js";
 import mail from "../services/mail.js";
 import User from "../models/User.js";
 import crypto from "crypto";
+import axios from "axios";
 
 const saltRounds = 10;
 
@@ -258,6 +259,77 @@ const resetPassword = async (req, res) => {
   }
 }
 
+const redirectOAuth = async (req, res) => {
+  const url = `https://github.com/login/oauth/authorize?client_id=${process.env.GH_CLIENT_ID}&scope=read:user%20user:email`;
+  return res.redirect(url);
+}
+
+const handleOAuthCallback = async (req, res) => {
+  const code = sanitize(req.query.code, "string");
+
+  if (!code) {
+    return res.status(400).json({ message: "Missing code in query" });
+  }
+
+  try {
+    const { data: { access_token } } = await axios.post("https://github.com/login/oauth/access_token",
+      {
+        client_id: process.env.GH_CLIENT_ID,
+        client_secret: process.env.GH_CLIENT_SECRET,
+        code
+      },
+      {
+        headers: { "Accept": "application/json" }
+      }
+    );
+
+    const [{ data: githubUser }, { data: githubEmails }] = await Promise.all([
+      axios.get("https://api.github.com/user", {
+        headers: { "Authorization": `token ${access_token}` }
+      }),
+      axios.get("https://api.github.com/user/emails", {
+        headers: { "Authorization": `token ${access_token}` }
+      })
+    ]);
+
+    const email = githubEmails.find(email => email.primary === true && email.verified === true)?.email;
+    if (!email) {
+      return res.status(400).json({ message: "Primary email not found" });
+    }
+
+    let user = await Auth.findOne({ email: { $eq: email } });
+    if (!user) {
+      const user = await Auth.create({
+        username: githubUser.login,
+        email,
+        isEmailVerified: true,
+        isAuthenticated: true
+      })
+      await User.create({
+        _id: user._id,
+        name: githubUser.name || githubUser.login,
+        avatar: githubUser.avatar_url
+      });
+    }
+
+    const payload = { sub: user._id, username: user.username, role: user.role, email: user.email };
+    const accessToken = jwt.sign(payload, process.env.TOKEN_SECRET, { expiresIn: "15m" });
+    const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, { expiresIn: "1d" });
+    const csrfToken = crypto.randomUUID();
+
+    await user.updateOne({ refreshToken });
+
+    const cookieOptions = { httpOnly: true, secure: isProduction };
+
+    res.cookie("refresh_token", refreshToken, { ...cookieOptions, maxAge: 24 * 60 * 60 * 1000 });
+    res.cookie("_csrf", csrfToken, cookieOptions);
+
+    return res.redirect(`http://localhost:3000?accessToken=${accessToken}&csrfToken=${csrfToken}`);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+}
+
 const AuthController = {
   register,
   login,
@@ -267,6 +339,8 @@ const AuthController = {
   resendEmail,
   forgotPassword,
   resetPassword,
+  redirectOAuth,
+  handleOAuthCallback
 }
 
 export default AuthController;

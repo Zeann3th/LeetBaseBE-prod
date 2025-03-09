@@ -1,14 +1,13 @@
 import { Router } from "express";
 import SubmissionController from "../controllers/submission.controller.js";
-import { verifyUser } from "../middlewares/auth.js";
+import { verifyAdmin } from "../middlewares/auth.js";
 
 const router = Router();
 
-router.get("/:id", verifyUser, SubmissionController.getById);
+router.get("/sync", verifyAdmin, SubmissionController.syncLanguage);
 
-router.post("/", verifyUser, SubmissionController.create);
+router.get("/:id", SubmissionController.getById);
 
-// TODO: Needs to be secure
-router.put("/callback", SubmissionController.createCallback);
+router.post("/", SubmissionController.create);
 
 export { router as SubmissionRouter };

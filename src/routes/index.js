@@ -14,7 +14,7 @@ router.use("/users", verifyUser, UserRouter);
 
 router.use("/problems", verifyUser, ProblemRouter);
 
-router.use("/submissions", SubmissionRouter);
+router.use("/submissions", verifyUser, SubmissionRouter);
 
 router.use("/search", verifyUser, SearchRouter);
 

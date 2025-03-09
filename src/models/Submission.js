@@ -1,11 +1,6 @@
 import mongoose from "mongoose";
 
 const submissionSchema = new mongoose.Schema({
-  submissionId: {
-    type: String,
-    required: true,
-    unique: true,
-  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -22,16 +17,13 @@ const submissionSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["PENDING", "ACCEPTED", "WRONG_ANSWER"],
+    enum: ["PENDING", "ACCEPTED", "WRONG_ANSWER", "COMPILE_ERROR"],
     default: "PENDING",
   },
   error: {
     type: String,
   },
   runtime: {
-    type: Number,
-  },
-  memory: {
     type: Number,
   },
 }, { timestamps: true });

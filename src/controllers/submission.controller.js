@@ -1,35 +1,23 @@
 import axios from "axios";
-import { sanitize, TwoWayMap } from "../utils.js";
+import { sanitize } from "../utils.js";
 import Problem from "../models/Problem.js";
 import s3 from "../services/storage.js";
 import Submission from "../models/Submission.js";
-
-const languages = new TwoWayMap({
-  103: "c",
-  105: "cpp",
-  107: "go",
-  91: "java",
-  102: "javascript",
-  98: "php",
-  100: "python",
-});
+import Language from "../models/Language.js";
 
 const getById = async (req, res) => {
-  const id = sanitize(req.params.id, "uuid");
+  const id = sanitize(req.params.id, "mongo");
   if (!id) {
     return res.status(400).json({ message: "Invalid Submission Id" });
   }
   try {
-    const submission = await Submission.findOne({ submissionId: { $eq: id } });
+    const submission = await Submission.findById(id);
     if (!submission) {
       return res.status(404).json({ message: "Submission not found" });
     }
-    console.log(submission.user, typeof submission.user);
-    console.log(req.user.sub, typeof req.user.sub);
-    // Fix later
-    //if (submission.user.toString() !== req.user.sub) {
-    //  return res.status(403).json({ message: "Unauthorized" });
-    //}
+    if (submission.user.toString() !== req.user.sub) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
     if (submission.status === "PENDING") {
       return res.status(202).json({ message: "Submission is pending" });
     }
@@ -42,21 +30,17 @@ const getById = async (req, res) => {
 const create = async (req, res) => {
   const problemId = sanitize(req.body.problemId, "mongo");
   const language = sanitize(req.body.language, "string");
-  const code = req.body.code; // Base64
+  const code = req.body.code;
 
   if (!problemId || !language || !code) {
     return res.status(400).json({ message: "Missing required fields in payload" });
   }
 
-  const languageId = languages.revGet(language.toLowerCase());
-  if (!languageId) {
-    return res.status(400).json({ message: "Invalid programming language" })
-  }
-
   try {
-    const [problem, template] = await Promise.all([
-      Problem.findById(sanitize(problemId, "mongo")),
-      s3.getDownloadUrl(`${problemId}/${language.toLowerCase()}`)
+    const [problem, template, existLanguage] = await Promise.all([
+      Problem.findById(problemId),
+      s3.getDownloadUrl(`${problemId}/${language.toLowerCase()}`),
+      Language.findOne({ name: { $eq: language } }),
     ]);
 
     if (!problem) {
@@ -67,74 +51,99 @@ const create = async (req, res) => {
       return res.status(404).json({ message: "Template not found" });
     }
 
-    const submit = template.replace(/\/\/--code--/g, Buffer.from(code, 'base64').toString());
+    if (!existLanguage) {
+      return res.status(404).json({ message: "Language not found" });
+    }
+
+    const submit = template.replace(/\/\/--code--/g, code);
 
     const options = {
       method: 'POST',
-      url: 'https://judge0-ce.p.rapidapi.com/submissions',
-      params: {
-        base64_encoded: 'true',
-        wait: 'false',
-        fields: '*'
-      },
+      url: 'https://emkc.org/api/v2/piston/execute',
       headers: {
-        "x-rapidapi-key": process.env.RAPID_API_KEY,
-        "x-rapidapi-host": "judge0-ce.p.rapidapi.com",
         "Content-Type": "application/json"
       },
       data: {
-        language_id: languageId,
-        source_code: Buffer.from(submit).toString('base64'),
-        callback_url: `${process.env.DNS}/v1/submissions/callback`
+        language: existLanguage.name,
+        version: existLanguage.version,
+        files: [
+          { content: submit }
+        ]
       }
     };
 
-    const { data: { token: submissionId } } = await axios.request(options);
-    console.log(req.user.sub);
+    const start = performance.now();
+    const { data: { run, compile } } = await axios.request(options);
+    const end = performance.now();
+
     const submission = await Submission.create({
-      submissionId,
       user: req.user.sub,
       problem: problemId,
       language,
+      status: compile?.stderr
+        ? "COMPILE_ERROR"
+        : run?.stderr
+          ? "WRONG_ANSWER"
+          : "ACCEPTED",
+      error: compile?.stderr || run?.stderr || null,
+      runtime: end - start,
     });
-    return res.status(202).json({ submissionId });
+    return res.status(200).json(submission);
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 }
 
-const createCallback = async (req, res) => {
-  let { token: submissionId, status, stderr, time, memory } = req.body;
+const syncLanguage = async (req, res) => {
+  try {
+    const options = {
+      method: 'GET',
+      url: 'https://emkc.org/api/v2/piston/runtimes',
+    };
+    const { data } = await axios.request(options);
 
-  const statusId = sanitize(status?.id, "number");
-  submissionId = sanitize(submissionId, "uuid");
-  stderr = sanitize(stderr, "string");
-  time = sanitize(time, "number");
-  memory = sanitize(memory, "number");
+    const languageMap = {
+      'go': 'go',
+      'javascript': 'javascript',
+      'java': 'java',
+      'c': 'c',
+      'cpp': 'cpp',
+      'python': 'python',
+      'php': 'php'
+    };
 
-  if (!submissionId || !statusId) {
-    return res.status(400).json({ message: "Invalid callback payload" });
+    const allowedLanguages = Object.keys(languageMap);
+
+    const languages = data
+      .filter(rt => allowedLanguages.includes(rt.language))
+      .map(({ language, version }) => {
+        const name = languageMap[language];
+        if (!name) return null;
+        return {
+          updateOne: {
+            filter: { name },
+            update: { $set: { version } },
+            upsert: true
+          }
+        };
+      })
+      .filter(Boolean);
+
+    if (languages.length > 0) {
+      await Language.bulkWrite(languages);
+    }
+
+    return res.status(200).json({ message: "Languages synced successfully" });
+  } catch (error) {
+    console.error("Error syncing languages:", error);
+    return res.status(500).json({ message: error.message });
   }
-
-  const update = {
-    status: statusId === 3 ? "ACCEPTED" : "WRONG_ANSWER",
-    error: stderr,
-    runtime: time,
-    memory,
-  };
-
-  await Submission.findOneAndUpdate(
-    { submissionId: { $eq: submissionId } },
-    update
-  );
-
-  res.status(204).send();
 };
 
 const SubmissionController = {
   getById,
   create,
-  createCallback,
+  syncLanguage,
 };
 
 export default SubmissionController;

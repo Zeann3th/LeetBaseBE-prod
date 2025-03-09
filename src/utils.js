@@ -3,23 +3,6 @@ import validator from "validator";
 
 const isProduction = process.env.NODE_ENV === "production";
 
-class TwoWayMap {
-  constructor(map) {
-    this.map = map;
-    this.reverseMap = {};
-    for (const key in map) {
-      const value = map[key];
-      this.reverseMap[value] = key;
-    }
-  }
-  get(key) {
-    return this.map[key];
-  }
-  revGet(key) {
-    return this.reverseMap[key];
-  }
-}
-
 const sanitize = (value, type) => {
   if (value == null) return null;
 
@@ -57,4 +40,4 @@ const escapeHtml = (str) => {
 }
 
 
-export { isProduction, TwoWayMap, sanitize, escapeHtml };
+export { isProduction, sanitize, escapeHtml };

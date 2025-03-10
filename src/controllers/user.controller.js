@@ -141,7 +141,7 @@ const getSubmissionHistory = async (req, res) => {
   }
 }
 
-const UserController = {
+const userController = {
   getAll,
   getById,
   getProfile,
@@ -149,6 +149,6 @@ const UserController = {
   getSubmissionHistory,
 };
 
-export default UserController;
+export default userController;
 
 

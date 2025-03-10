@@ -1,10 +1,10 @@
 import { Router } from "express"
-import SearchController from "../controllers/search.controller.js"
+import searchController from "../controllers/search.controller.js"
 
 const router = Router()
 
-router.get("/:term", SearchController.searchProblems)
+router.get("/:term", searchController.searchProblems)
 
 // TODO: Search by tags, search users?
 
-export { router as SearchRouter }
+export { router as searchRouter }

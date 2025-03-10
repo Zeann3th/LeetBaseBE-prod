@@ -38,8 +38,8 @@ const searchProblems = async (req, res) => {
   return res.status(200).send(problems);
 }
 
-const SearchController = {
+const searchController = {
   searchProblems,
 }
 
-export default SearchController;
+export default searchController;

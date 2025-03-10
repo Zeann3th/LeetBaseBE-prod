@@ -330,7 +330,7 @@ const handleOAuthCallback = async (req, res) => {
   }
 }
 
-const AuthController = {
+const authController = {
   register,
   login,
   refresh,
@@ -343,4 +343,4 @@ const AuthController = {
   handleOAuthCallback
 }
 
-export default AuthController;
+export default authController;

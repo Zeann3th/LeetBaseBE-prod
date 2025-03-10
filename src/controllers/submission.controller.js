@@ -84,6 +84,7 @@ const create = async (req, res) => {
         : run?.stderr
           ? "WRONG_ANSWER"
           : "ACCEPTED",
+      code,
       error: compile?.stderr || run?.stderr || null,
       runtime: end - start,
     });
@@ -112,9 +113,9 @@ const getLanguageVersion = async (language) => {
   }
 };
 
-const SubmissionController = {
+const submissionController = {
   getById,
   create,
 };
 
-export default SubmissionController;
+export default submissionController;

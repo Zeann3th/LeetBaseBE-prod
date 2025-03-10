@@ -153,7 +153,7 @@ const remove = async (req, res) => {
   return res.status(204).send();
 }
 
-const ProblemController = {
+const problemController = {
   getAll,
   getById,
   create,
@@ -162,4 +162,4 @@ const ProblemController = {
   remove
 }
 
-export default ProblemController;
+export default problemController;

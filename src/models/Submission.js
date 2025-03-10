@@ -20,6 +20,10 @@ const submissionSchema = new mongoose.Schema({
     enum: ["PENDING", "ACCEPTED", "WRONG_ANSWER", "COMPILE_ERROR"],
     default: "PENDING",
   },
+  code: {
+    type: String,
+    required: true,
+  },
   error: {
     type: String,
   },

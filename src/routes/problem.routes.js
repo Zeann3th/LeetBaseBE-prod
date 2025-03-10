@@ -1,19 +1,19 @@
 import { Router } from "express";
-import ProblemController from "../controllers/problem.controller.js";
 import { verifyAdmin } from "../middlewares/auth.js";
+import problemController from "../controllers/problem.controller.js";
 
 const router = Router();
 
-router.get("/", ProblemController.getAll)
+router.get("/", problemController.getAll)
 
-router.get("/:id", ProblemController.getById)
+router.get("/:id", problemController.getById)
 
-router.post("/", verifyAdmin, ProblemController.create)
+router.post("/", verifyAdmin, problemController.create)
 
-router.post("/:id/upload", verifyAdmin, ProblemController.getUploadUrl)
+router.post("/:id/upload", verifyAdmin, problemController.getUploadUrl)
 
-router.patch("/:id", verifyAdmin, ProblemController.update)
+router.patch("/:id", verifyAdmin, problemController.update)
 
-router.delete("/:id", verifyAdmin, ProblemController.remove)
+router.delete("/:id", verifyAdmin, problemController.remove)
 
-export { router as ProblemRouter };
+export { router as problemRouter };

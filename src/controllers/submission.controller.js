@@ -3,7 +3,6 @@ import { sanitize } from "../utils.js";
 import Problem from "../models/Problem.js";
 import s3 from "../services/storage.js";
 import Submission from "../models/Submission.js";
-import Language from "../models/Language.js";
 
 const getById = async (req, res) => {
   const id = sanitize(req.params.id, "mongo");
@@ -37,10 +36,10 @@ const create = async (req, res) => {
   }
 
   try {
-    const [problem, template, existLanguage] = await Promise.all([
+    const [problem, template, languageVersion] = await Promise.all([
       Problem.findById(problemId),
       s3.getDownloadUrl(`${problemId}/${language.toLowerCase()}`),
-      Language.findOne({ name: { $eq: language } }),
+      getLanguageVersion(language),
     ]);
 
     if (!problem) {
@@ -51,8 +50,8 @@ const create = async (req, res) => {
       return res.status(404).json({ message: "Template not found" });
     }
 
-    if (!existLanguage) {
-      return res.status(404).json({ message: "Language not found" });
+    if (!languageVersion) {
+      return res.status(404).json({ message: "Language version not found" });
     }
 
     const submit = template.replace(/\/\/--code--/g, code);
@@ -64,8 +63,8 @@ const create = async (req, res) => {
         "Content-Type": "application/json"
       },
       data: {
-        language: existLanguage.name,
-        version: existLanguage.version,
+        language: language,
+        version: languageVersion,
         files: [
           { content: submit }
         ]
@@ -94,7 +93,7 @@ const create = async (req, res) => {
   }
 }
 
-const syncLanguage = async (req, res) => {
+const getLanguageVersion = async (language) => {
   try {
     const options = {
       method: 'GET',
@@ -102,48 +101,20 @@ const syncLanguage = async (req, res) => {
     };
     const { data } = await axios.request(options);
 
-    const languageMap = {
-      'go': 'go',
-      'javascript': 'javascript',
-      'java': 'java',
-      'c': 'c',
-      'cpp': 'cpp',
-      'python': 'python',
-      'php': 'php'
-    };
-
-    const allowedLanguages = Object.keys(languageMap);
-
-    const languages = data
-      .filter(rt => allowedLanguages.includes(rt.language))
-      .map(({ language, version }) => {
-        const name = languageMap[language];
-        if (!name) return null;
-        return {
-          updateOne: {
-            filter: { name },
-            update: { $set: { version } },
-            upsert: true
-          }
-        };
-      })
-      .filter(Boolean);
-
-    if (languages.length > 0) {
-      await Language.bulkWrite(languages);
+    const runtime = data.find((runtime) => runtime.language === language);
+    if (!runtime) {
+      throw new Error(`Language ${language} not found`);
     }
 
-    return res.status(200).json({ message: "Languages synced successfully" });
+    return runtime.version;
   } catch (error) {
-    console.error("Error syncing languages:", error);
-    return res.status(500).json({ message: error.message });
+    throw new Error(`Error getting language version: ${error.message}`);
   }
 };
 
 const SubmissionController = {
   getById,
   create,
-  syncLanguage,
 };
 
 export default SubmissionController;

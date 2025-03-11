@@ -1,16 +1,16 @@
 import { Router } from "express";
-import UserController from "../controllers/user.controller.js";
+import userController from "../controllers/user.controller.js";
 
 const router = Router();
 
-router.get("/", UserController.getAll);
+router.get("/", userController.getAll);
 
-router.get("/:id", UserController.getById);
+router.get("/:id", userController.getById);
 
-router.get("/profile", UserController.getProfile);
+router.get("/profile", userController.getProfile);
 
-router.patch("/profile", UserController.update);
+router.patch("/:id", userController.update);
 
-router.get("/submissions", UserController.getSubmissionHistory);
+router.get("/submissions", userController.getSubmissionHistory);
 
-export { router as UserRouter };
+export { router as userRouter };

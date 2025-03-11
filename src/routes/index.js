@@ -1,21 +1,24 @@
 import { Router } from "express";
 import { verifyUser } from "../middlewares/auth.js";
-import { AuthRouter } from "./auth.routes.js";
-import { UserRouter } from "./user.routes.js";
-import { ProblemRouter } from "./problem.routes.js";
-import { SubmissionRouter } from "./submission.routes.js";
-import { SearchRouter } from "./search.routes.js";
+import { authRouter } from "./auth.routes.js";
+import { userRouter } from "./user.routes.js";
+import { problemRouter } from "./problem.routes.js";
+import { submissionRouter } from "./submission.routes.js";
+import { discussionRouter } from "./discussion.routes.js";
+import { commentRouter } from "./comment.routes.js";
 
 const router = Router();
 
-router.use("/auth", AuthRouter);
+router.use("/auth", authRouter);
 
-router.use("/users", verifyUser, UserRouter);
+router.use("/users", verifyUser, userRouter);
 
-router.use("/problems", verifyUser, ProblemRouter);
+router.use("/problems", verifyUser, problemRouter);
 
-router.use("/submissions", verifyUser, SubmissionRouter);
+router.use("/submissions", verifyUser, submissionRouter);
 
-router.use("/search", verifyUser, SearchRouter);
+router.use("/discussions", verifyUser, discussionRouter);
+
+router.use("/comments", verifyUser, commentRouter);
 
 export default router;

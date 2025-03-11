@@ -19,9 +19,9 @@ const getAll = async (req, res) => {
     const users = await User.find().limit(limit).skip((page - 1) * limit);
     await cache.set(key, JSON.stringify(users), "EX", 600);
 
-    return res.status(200).json(users);
+    res.status(200).json(users);
   } catch (err) {
-    return res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 }
 
@@ -48,14 +48,14 @@ const getById = async (req, res) => {
 
     await cache.set(key, JSON.stringify(user), "EX", 600);
 
-    return res.status(200).json(user);
+    res.status(200).json(user);
   } catch (err) {
-    return res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 }
 
 const getProfile = async (req, res) => {
-  const id = sanitize(req.user.sub, "mongo");
+  const id = req.user.sub;
   if (!id) {
     return res.status(400).json({ message: "Missing path id" });
   }
@@ -77,16 +77,20 @@ const getProfile = async (req, res) => {
 
     await cache.set(key, JSON.stringify(user), "EX", 600);
 
-    return res.status(200).json(user);
+    res.status(200).json(user);
   } catch (err) {
-    return res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 }
 
 const update = async (req, res) => {
-  const id = sanitize(req.user.sub, "mongo");
-  if (!id) {
-    return res.status(401).json({ message: "Missing user credentials" });
+  const id = sanitize(req.params.id, "mongo");
+  if (!id || !req.user) {
+    return res.status(401).json({ message: "Missing path id or user credentials" });
+  }
+
+  if (req.user.sub !== id && req.user.role !== "ADMIN") {
+    return res.status(403).json({ message: "Forbidden" });
   }
 
   const { name, avatar } = req.body;
@@ -97,19 +101,19 @@ const update = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    user.name = sanitize(name, "string") || user.name;
-    user.avatar = sanitize(avatar, "url") || user.avatar;
+    if (name) user.name = sanitize(name, "string");
+    if (avatar) user.avatar = sanitize(avatar, "url");
 
     await user.save();
 
-    return res.status(200).json(user);
+    res.status(200).json(user);
   } catch (err) {
-    return res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 }
 
 const getSubmissionHistory = async (req, res) => {
-  const id = sanitize(req.user.sub, "mongo");
+  const id = req.user.sub;
   const limit = sanitize(req.query.limit, "number") || 10;
   const page = sanitize(req.query.page, "number") || 1;
 
@@ -141,7 +145,7 @@ const getSubmissionHistory = async (req, res) => {
   }
 }
 
-const UserController = {
+const userController = {
   getAll,
   getById,
   getProfile,
@@ -149,6 +153,6 @@ const UserController = {
   getSubmissionHistory,
 };
 
-export default UserController;
+export default userController;
 
 

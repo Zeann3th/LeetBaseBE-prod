@@ -1,4 +1,4 @@
-# LeetBase BE 0.1.1 
+# LeetBase BE 
 Not for English users 😔. I will update the English version soon.
 
 ## Giới thiệu 
@@ -18,16 +18,33 @@ Trước khi chạy, bạn cần phải tạo một file `.env` trong thư mục
 
 ```
 PORT=5000
+
+# MONGODB
 MONGO_URI=<MONGO_URI> # Lấy từ MongoDB Atlas hoặc local
 MONGO_DB_NAME=<DB_NAME> # Tên database
+
+# JWT
 TOKEN_SECRET=<TOKEN_SECRET> # Chuỗi bí mật để tạo access token
 REFRESH_TOKEN_SECRET=<REFRESH_TOKEN_SECRET> # Chuỗi bí mật để tạo refresh token 
+
+# SMTP (Sử dụng bất kỳ dịch vụ nào, có thể là Resend, Brevo, tuy nhiên cần phải có tên miền, tránh sử dụng mail @gmail vì sẽ bị để vào thư rác)
 SMTP_HOST=<SMTP_HOST> # SMTP host để gửi email
 SMTP_EMAIL=<SMTP_EMAIL> # Email relay để gửi email đến người dùng
 SMTP_SENDER=<SMTP_SENDER> # Email gốc của người gửi
 SMTP_PASSWORD=<SMTP_PASSWORD> # Mật khẩu email để gửi email
+
+# CACHE
 REDIS_URL=<REDIS_URL> # URL của Redis (có thể lấy ở Render, Upstash hay local)
-RAPIDAPI_KEY=<RAPIDAPI_KEY> # API key của RapidAPI để sử dụng API của các bên thứ 3, ở đây dùng Judge0 để thực thi code trên cloud
+
+# Object Storage (Sử dụng Cloudflare R2)
+CF_ACCOUNT_ID=<CF_ACCOUNT_ID> # Cloudflare Account ID 
+CF_BUCKET=<CF_BUCKET> # Tên Bucket 
+CF_ACCESS_KEY_ID=<CF_ACCESS_KEY_ID> # Access Key ID 
+CF_SECRET_ACCESS_KEY=<CF_SECRET_ACCESS_KEY> # Secret Access Key 
+
+# Github Oauth (Đăng ký trên Github Developer) 
+GH_CLIENT_ID=<GH_CLIENT_ID> # Client ID của Github Oauth 
+GH_CLIENT_SECRET=<GH_CLIENT_SECRET> # Client Secret của Github Oauth
 ```
 
 Sau đó, chạy lệnh sau để khởi động server:

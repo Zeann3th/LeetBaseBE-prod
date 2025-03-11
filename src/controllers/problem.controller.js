@@ -2,6 +2,7 @@ import Problem from "../models/Problem.js";
 import cache from "../services/cache.js";
 import { sanitize } from "../utils.js";
 import s3 from "../services/storage.js";
+import Submission from "../models/Submission.js";
 
 const getAll = async (req, res) => {
   const limit = sanitize(req.query.limit, "number") || 10;
@@ -68,13 +69,13 @@ const create = async (req, res) => {
   }
 
   try {
-    await Problem.create({
+    const problem = await Problem.create({
       title,
       description,
       difficulty: difficulty.toUpperCase(),
       tags,
     })
-    return res.status(201).json({ message: "Problem created successfully" });
+    return res.status(201).json(problem);
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
@@ -153,13 +154,73 @@ const remove = async (req, res) => {
   return res.status(204).send();
 }
 
-const ProblemController = {
+const search = async (req, res) => {
+  const term = sanitize(req.query.term, "string");
+  if (!term) {
+    return res.status(400).send({ message: "Invalid search term" });
+  }
+
+  const key = `problems_search:${term}`;
+
+  if (req.headers["Cache-Control"] !== "no-cache") {
+    const cached = await cache.get(key);
+    if (cached) {
+      return res.status(200).json(JSON.parse(cached));
+    }
+  }
+
+  const problems = await Problem.aggregate([
+    {
+      "$search": {
+        "index": "problemsIdx",
+        "text": {
+          "query": term,
+          "path": "title",
+          "fuzzy": {}
+        }
+      }
+    }
+  ])
+
+  if (!problems) {
+    return res.status(404).send({ message: "No problems found" });
+  }
+
+  await cache.set(key, JSON.stringify(problems), "EX", 600);
+  return res.status(200).send(problems);
+}
+
+const getLeaderboard = async (req, res) => {
+  const id = sanitize(req.params.id, "mongo");
+  const language = sanitize(req.query.language, "string");
+  const limit = sanitize(req.query.limit, "number") || 10;
+  if (!id) {
+    return res.status(400).json({ message: "Missing path id" });
+  }
+
+  const query = {
+    status: "ACCEPTED",
+    problem: id,
+    ...(language && { language: language.toLowerCase() }),
+  }
+
+  try {
+    const submissions = await Submission.find(query).sort({ runtime: 1 }).limit(limit).select("language user runtime").populate("user");
+    res.status(200).json(submissions);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+const problemController = {
   getAll,
   getById,
   create,
   getUploadUrl,
   update,
-  remove
+  remove,
+  search,
+  getLeaderboard
 }
 
-export default ProblemController;
+export default problemController;

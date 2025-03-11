@@ -9,7 +9,7 @@ router.get("/:id", userController.getById);
 
 router.get("/profile", userController.getProfile);
 
-router.patch("/profile", userController.update);
+router.patch("/:id", userController.update);
 
 router.get("/submissions", userController.getSubmissionHistory);
 

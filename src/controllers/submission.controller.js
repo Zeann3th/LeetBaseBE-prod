@@ -14,15 +14,9 @@ const getById = async (req, res) => {
     if (!submission) {
       return res.status(404).json({ message: "Submission not found" });
     }
-    if (submission.user.toString() !== req.user.sub) {
-      return res.status(403).json({ message: "Unauthorized" });
-    }
-    if (submission.status === "PENDING") {
-      return res.status(202).json({ message: "Submission is pending" });
-    }
-    return res.status(200).json(submission);
+    res.status(200).json(submission);
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 }
 
@@ -88,9 +82,9 @@ const create = async (req, res) => {
       error: compile?.stderr || run?.stderr || null,
       runtime: end - start,
     });
-    return res.status(200).json(submission);
+    res.status(200).json(submission);
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 }
 

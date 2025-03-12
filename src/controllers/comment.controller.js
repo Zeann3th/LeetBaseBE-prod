@@ -104,7 +104,7 @@ const remove = async (req, res) => {
       return res.status(403).json({ message: "Forbidden" });
     }
 
-    await comment.remove();
+    await comment.deleteOne();
     res.status(204).send();
   } catch (err) {
     res.status(500).json({ message: err.message });

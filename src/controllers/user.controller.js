@@ -1,3 +1,4 @@
+import Submission from "../models/Submission.js";
 import User from "../models/User.js";
 import cache from "../services/cache.js";
 import { sanitize } from "../utils.js";
@@ -116,12 +117,13 @@ const getSubmissionHistory = async (req, res) => {
   const id = req.user.sub;
   const limit = sanitize(req.query.limit, "number") || 10;
   const page = sanitize(req.query.page, "number") || 1;
+  const problem = sanitize(req.query.problem, "mongo");
 
   if (!id) {
     return res.status(401).json({ message: "Missing user credentials" });
   }
 
-  const key = `user_submissions:${id}`;
+  const key = `user_submissions:${id}:${problem ? problem : "*"}:${limit}:${page}`;
 
   try {
     if (req.headers["Cache-Control"] !== "no-cache") {
@@ -136,7 +138,12 @@ const getSubmissionHistory = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const submissions = await Submission.find({ user: id }).limit(limit).skip((page - 1) * limit);
+    const query = {
+      user: id,
+      ...(problem && { problem }),
+    }
+
+    const submissions = await Submission.find(query).limit(limit).skip((page - 1) * limit);
     await cache.set(key, JSON.stringify(submissions), "EX", 600);
 
     return res.status(200).json(submissions);

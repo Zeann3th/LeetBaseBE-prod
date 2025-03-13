@@ -166,12 +166,12 @@ const refresh = async (req, res) => {
   }
 
   try {
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+
     const user = await Auth.findOne({ refreshToken: { $eq: refreshToken } });
     if (!user) {
       return res.status(403).json({ message: "Invalid refresh tokend" });
     }
-
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
 
     const accessToken = jwt.sign(
       { sub: decoded._id, username: decoded.username, role: decoded.role, email: decoded.email },

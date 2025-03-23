@@ -10,6 +10,8 @@ router.get("/search", problemController.search)
 
 router.get("/:id", problemController.getById)
 
+router.get("/:id/dailies", problemController.getDailies)
+
 router.get("/:id/leaderboards", problemController.getLeaderboard)
 
 router.post("/", verifyAdmin, problemController.create)

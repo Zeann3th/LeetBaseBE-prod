@@ -3,6 +3,7 @@ import cache from "../services/cache.js";
 import { sanitize } from "../utils.js";
 import s3 from "../services/storage.js";
 import Submission from "../models/Submission.js";
+import DailyProblem from "../models/DailyProblem.js";
 
 const getAll = async (req, res) => {
   const limit = sanitize(req.query.limit, "number") || 10;
@@ -212,6 +213,21 @@ const getLeaderboard = async (req, res) => {
   }
 }
 
+const getDailies = async (req, res) => {
+  const month = sanitize(req.query.month, "number") || new Date().getMonth();
+  const year = sanitize(req.query.year, "number") || new Date().getFullYear();
+
+  const start = new Date(year, month, 1);
+  const end = new Date(year, month + 1, 0);
+
+  try {
+    const problems = await DailyProblem.find({ date: { $gte: start, $lte: end } }).populate("problem");
+    res.status(200).json(problems);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
 const problemController = {
   getAll,
   getById,
@@ -220,7 +236,8 @@ const problemController = {
   update,
   remove,
   search,
-  getLeaderboard
+  getLeaderboard,
+  getDailies,
 }
 
 export default problemController;

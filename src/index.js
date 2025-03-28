@@ -8,6 +8,7 @@ import cookieParser from 'cookie-parser';
 import { ipLimiter } from './middlewares/ratelimit.js';
 import router from './routes/index.js';
 import mongoose from 'mongoose';
+import { isProduction } from './utils.js';
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -33,6 +34,12 @@ app.use(morgan(":method :url :status - :response-time ms"))
 // Endpoints
 app.get("/healthz", (req, res) => {
   res.status(200).json({ message: "Server is Healthy" });
+});
+
+app.get("/csrf-token", (req, res) => {
+  const csrfToken = crypto.randomUUID();
+  res.cookie("_csrf", csrfToken, { httpOnly: true, secure: isProduction });
+  res.status(200).json({ csrfToken });
 });
 
 app.use("/v1", ipLimiter, router);

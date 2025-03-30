@@ -12,7 +12,15 @@ const commentSchema = new mongoose.Schema({
   },
   replies: {
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comment" }],
-  }
+  },
+  upvotes: {
+    type: Number,
+    default: 0,
+  },
+  downvotes: {
+    type: Number,
+    default: 0,
+  },
 }, { timestamps: true });
 
 const Comment = mongoose.model("Comment", commentSchema);

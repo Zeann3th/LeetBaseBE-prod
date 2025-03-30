@@ -8,9 +8,9 @@ router.get("/", problemController.getAll)
 
 router.get("/search", problemController.search)
 
-router.get("/:id", problemController.getById)
+router.get("/dailies", problemController.getDailies)
 
-router.get("/:id/dailies", problemController.getDailies)
+router.get("/:id", problemController.getById)
 
 router.get("/:id/leaderboards", problemController.getLeaderboard)
 

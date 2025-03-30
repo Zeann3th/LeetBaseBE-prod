@@ -196,7 +196,7 @@ const vote = async (req, res) => {
         await existingVote.save();
       }
     } else {
-      await Vote.create({ userId: req.user.sub, nodeType: "comment", nodeId: id, vote: action });
+      await Vote.create({ userId: req.user.sub, nodeType: "discussion", nodeId: id, vote: action });
       action === "upvote" ? discussion.upvotes++ : discussion.downvotes++;
     }
 

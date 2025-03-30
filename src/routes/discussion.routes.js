@@ -9,7 +9,7 @@ router.get("/search", discussionController.search)
 
 router.get("/:id", discussionController.getById)
 
-router.get("/:id/vote", discussionController.vote)
+router.post("/:id/vote", discussionController.vote)
 
 router.post("/", discussionController.create)
 

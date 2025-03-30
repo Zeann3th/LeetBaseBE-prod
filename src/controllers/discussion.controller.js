@@ -201,7 +201,7 @@ const vote = async (req, res) => {
     }
 
     await discussion.save();
-    res.status(200).json({ message: "Vote recorded" });
+    res.status(200).json({ message: "Vote recorded", upvotes: discussion.upvotes, downvotes: discussion.downvotes });
 
   } catch (err) {
     res.status(500).json({ message: err.message });

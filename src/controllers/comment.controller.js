@@ -1,5 +1,6 @@
 import Comment from "../models/Comment.js";
 import Discussion from "../models/Discussion.js";
+import Vote from "../models/Vote.js";
 import { sanitize } from "../utils.js";
 
 const getById = async (req, res) => {
@@ -111,11 +112,59 @@ const remove = async (req, res) => {
   }
 }
 
+const vote = async (req, res) => {
+  const id = sanitize(req.params.id, "mongo");
+  if (!id) return res.status(400).json({ message: "Missing path id" });
+
+  const action = req.query.action;
+  if (!["upvote", "downvote"].includes(action)) {
+    return res.status(400).json({ message: "Invalid vote type" });
+  }
+
+  try {
+    const comment = await Comment.findById(id);
+    if (!comment) return res.status(404).json({ message: "Comment not found" });
+
+    if (comment.author.toString() === req.user.sub) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    const existingVote = await Vote.findOne({ userId: req.user.sub, nodeType: "comment", nodeId: id });
+
+    if (existingVote) {
+      if (existingVote.vote === action) {
+        await existingVote.deleteOne();
+        action === "upvote" ? comment.upvotes-- : comment.downvotes--;
+      } else {
+        if (existingVote.vote === "upvote") {
+          comment.upvotes--;
+          comment.downvotes++;
+        } else {
+          comment.downvotes--;
+          comment.upvotes++;
+        }
+        existingVote.vote = action;
+        await existingVote.save();
+      }
+    } else {
+      await Vote.create({ userId: req.user.sub, nodeType: "comment", nodeId: id, vote: action });
+      action === "upvote" ? comment.upvotes++ : comment.downvotes++;
+    }
+
+    await comment.save();
+    res.status(200).json({ message: "Vote updated", upvotes: comment.upvotes, downvotes: comment.downvotes });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 const commentController = {
   getById,
   create,
   update,
-  remove
+  remove,
+  vote,
 }
 
 export default commentController;

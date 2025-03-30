@@ -331,7 +331,7 @@ const handleOAuthCallback = async (req, res) => {
     res.cookie("refresh_token", refreshToken, { ...cookieOptions, maxAge: 24 * 60 * 60 * 1000 });
     res.cookie("_csrf", csrfToken, cookieOptions);
 
-    return res.redirect(`http://localhost:3000?accessToken=${accessToken}&csrfToken=${csrfToken}`);
+    return res.redirect(`${process.env.APP_URL}?accessToken=${accessToken}&csrfToken=${csrfToken}`);
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }

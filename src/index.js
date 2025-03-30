@@ -15,7 +15,7 @@ const port = process.env.PORT || 8000;
 
 // Security
 app.use(cors({
-  origin: "*",
+  origin: process.env.APP_URL || "*",
   allowedHeaders: ["Content-Type", "Authorization", "Cache-Control"],
   credentials: true,
 }));

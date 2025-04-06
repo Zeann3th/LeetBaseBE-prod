@@ -83,6 +83,45 @@ const create = async (req, res) => {
   }
 };
 
+const getFunctionDeclaration = async (req, res) => {
+  const id = sanitize(req.params.id, "mongo");
+  const language = sanitize(req.query.language, "string");
+
+  if (!id) {
+    return res.status(400).json({ message: "Missing path id" });
+  }
+
+  if (!language) {
+    return res.status(400).json({ message: "Missing query language" });
+  }
+
+  const key = `problem:${id}:func:${language}`;
+
+  try {
+    if (req.headers["Cache-Control"] !== "no-cache") {
+      const cachedFunc = await cache.get(key);
+      if (cachedFunc) {
+        return res.status(200).json(JSON.parse(cachedFunc));
+      }
+    }
+
+    const problem = await Problem.findById(id);
+    if (!problem) {
+      return res.status(404).json({ message: "Problem not found" });
+    }
+
+    const func = await s3.getContent(`${id}/funcs/${language.toLowerCase()}`);
+    if (!func) {
+      return res.status(404).json({ message: "Function not found" });
+    }
+
+    await cache.set(key, JSON.stringify(func), "EX", 600);
+    res.status(200).json({ function: func });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 const getUploadUrl = async (req, res) => {
   const id = sanitize(req.params.id, "mongo");
   const language = sanitize(req.body.language, "string");
@@ -307,6 +346,7 @@ const problemController = {
   search,
   getLeaderboard,
   getDailies,
+  getFunctionDeclaration,
 };
 
 export default problemController;

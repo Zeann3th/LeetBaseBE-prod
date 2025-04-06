@@ -13,6 +13,8 @@ router.get("/dailies", problemController.getDailies);
 
 router.get("/:id", problemController.getById);
 
+router.get("/:id/functions", problemController.getFunctionDeclaration);
+
 router.get("/:id/leaderboards", problemController.getLeaderboard);
 
 router.post("/", verifyAdmin, problemController.create);

@@ -115,10 +115,10 @@ const getFunctionDeclaration = async (req, res) => {
       return res.status(404).json({ message: "Function not found" });
     }
 
-    await cache.set(key, JSON.stringify(func), "EX", 600);
+    await cache.set(key, JSON.stringify({ function: func }), "EX", 600);
     res.status(200).json({ function: func });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    return res.status(500).json({ message: err.message });
   }
 };
 
@@ -151,6 +151,14 @@ const upload = async (req, res) => {
   }
   if (!language) {
     return res.status(400).json({ message: "Missing query language" });
+  }
+
+  if (!req.file) {
+    return res.status(400).json({ message: "No file uploaded" });
+  }
+
+  if (!commentMarkers[language]) {
+    return res.status(400).json({ message: `Unsupported language: ${language}` });
   }
 
   try {

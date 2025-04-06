@@ -1,5 +1,9 @@
 // Replace the code below with user's code
-//--code--
+// USER CODE HERE
+function merge(nums1, m, nums2, n) {
+
+}
+// END USER CODE
 
 const testCases = [
   {

@@ -29,7 +29,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Logger
-app.use(morgan(":method :url :status - :response-time ms"))
+app.use(morgan(":method :url :status - :response-time ms"));
 
 // Endpoints
 app.get("/healthz", (req, res) => {
@@ -38,7 +38,7 @@ app.get("/healthz", (req, res) => {
 
 app.get("/csrf-token", (req, res) => {
   const csrfToken = crypto.randomUUID();
-  res.cookie("_csrf", csrfToken, { httpOnly: true, secure: isProduction });
+  res.cookie("_csrf", csrfToken, { httpOnly: true, secure: isProduction, sameSite: "none", path: "/", partitioned: true });
   res.status(200).json({ csrfToken });
 });
 
@@ -55,7 +55,7 @@ mongoose.connect(process.env.MONGO_URI, {
     Note that the development build is not optimized.
     To create a production build, use \x1b[32mnpm run start\x1b[0m.\n
   `);
-  })
+  });
 }).catch((error) => {
   console.log('Error: ', error);
 });

@@ -21,7 +21,7 @@ class S3StorageService {
     );
     return url;
   }
-  async getDownloadUrl(key) {
+  async getContent(key) {
     const { Body } = await this.client.send(new GetObjectCommand({
       Bucket: process.env.CF_BUCKET,
       Key: key,
@@ -38,6 +38,14 @@ class S3StorageService {
     const fileContent = await streamToString(Body);
 
     return fileContent;
+  }
+  async uploadContent(key, content) {
+    const params = {
+      Bucket: process.env.CF_BUCKET,
+      Key: key,
+      Body: content,
+    };
+    await this.client.send(new PutObjectCommand(params));
   }
 }
 

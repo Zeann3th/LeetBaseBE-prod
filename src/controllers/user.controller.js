@@ -10,7 +10,7 @@ const getAll = async (req, res) => {
   const key = `users:${limit}:${page}`;
 
   try {
-    if (req.headers["Cache-Control"] !== "no-cache") {
+    if (req.headers["cache-control"] !== "no-cache") {
       const cachedUsers = await cache.get(key);
       if (cachedUsers) {
         return res.status(200).json(JSON.parse(cachedUsers));
@@ -44,7 +44,7 @@ const getById = async (req, res) => {
   const key = `user:${id}`;
 
   try {
-    if (req.headers["Cache-Control"] !== "no-cache") {
+    if (req.headers["cache-control"] !== "no-cache") {
       const cachedUser = await cache.get(key);
       if (cachedUser) {
         return res.status(200).json(JSON.parse(cachedUser));
@@ -73,7 +73,7 @@ const getProfile = async (req, res) => {
   const key = `user:${id}`;
 
   try {
-    if (req.headers["Cache-Control"] !== "no-cache") {
+    if (req.headers["cache-control"] !== "no-cache") {
       const cachedUser = await cache.get(key);
       if (cachedUser) {
         return res.status(200).json(JSON.parse(cachedUser));
@@ -135,7 +135,7 @@ const getSubmissionHistory = async (req, res) => {
   const key = `user_submissions:${id}:${problem ? problem : "*"}:${limit}:${page}`;
 
   try {
-    if (req.headers["Cache-Control"] !== "no-cache") {
+    if (req.headers["cache-control"] !== "no-cache") {
       const cachedSubmissions = await cache.get(key);
       if (cachedSubmissions) {
         return res.status(200).json(JSON.parse(cachedSubmissions));

@@ -13,12 +13,12 @@ router.use("/auth", authRouter);
 
 router.use("/users", verifyUser, userRouter);
 
-router.use("/problems", verifyUser, problemRouter);
+router.use("/problems", problemRouter);
 
 router.use("/submissions", verifyUser, submissionRouter);
 
-router.use("/discussions", verifyUser, discussionRouter);
+router.use("/discussions", discussionRouter);
 
-router.use("/comments", verifyUser, commentRouter);
+router.use("/comments", commentRouter);
 
 export default router;

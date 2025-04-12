@@ -10,7 +10,7 @@ const getAll = async (req, res) => {
   const key = `discussions:${limit}:${page}`;
 
   try {
-    if (req.headers["Cache-Control"] === "no-cache") {
+    if (req.headers["cache-control"] === "no-cache") {
       const cachedDiscussions = await cache.get("discussions");
       if (cachedDiscussions) {
         return res.status(200).json(JSON.parse(cachedDiscussions));
@@ -138,7 +138,7 @@ const search = async (req, res) => {
 
   const key = `discussions_search:${term}`;
 
-  if (req.headers["Cache-Control"] !== "no-cache") {
+  if (req.headers["cache-control"] !== "no-cache") {
     const cached = await cache.get(key);
     if (cached) {
       return res.status(200).json(JSON.parse(cached));

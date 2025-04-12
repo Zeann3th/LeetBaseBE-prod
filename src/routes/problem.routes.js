@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { verifyAdmin } from "../middlewares/auth.js";
+import { verifyAdmin, verifyUser } from "../middlewares/auth.js";
 import problemController from "../controllers/problem.controller.js";
 import { upload } from "../middlewares/multer.js";
 
@@ -13,16 +13,16 @@ router.get("/dailies", problemController.getDailies);
 
 router.get("/:id", problemController.getById);
 
-router.get("/:id/functions", problemController.getFunctionDeclaration);
+router.get("/:id/functions", verifyUser, problemController.getFunctionDeclaration);
 
-router.get("/:id/leaderboards", problemController.getLeaderboard);
+router.get("/:id/leaderboards", verifyUser, problemController.getLeaderboard);
 
-router.post("/", verifyAdmin, problemController.create);
+router.post("/", verifyUser, verifyAdmin, problemController.create);
 
-router.post("/:id/upload", upload.single("file"), verifyAdmin, problemController.upload);
+router.post("/:id/upload", upload.single("file"), verifyUser, verifyAdmin, problemController.upload);
 
-router.patch("/:id", verifyAdmin, problemController.update);
+router.patch("/:id", verifyUser, verifyAdmin, problemController.update);
 
-router.delete("/:id", verifyAdmin, problemController.remove);
+router.delete("/:id", verifyUser, verifyAdmin, problemController.remove);
 
 export { router as problemRouter };

@@ -13,7 +13,7 @@ const getAll = async (req, res) => {
   const key = `problems:${limit}:${page}`;
 
   try {
-    if (req.headers["Cache-Control"] !== "no-cache") {
+    if (req.headers["cache-control"] !== "no-cache") {
       const cachedProblems = await cache.get(key);
       if (cachedProblems) {
         return res.status(200).json(JSON.parse(cachedProblems));
@@ -47,7 +47,7 @@ const getById = async (req, res) => {
   const key = `problem:${id}`;
 
   try {
-    if (req.headers["Cache-Control"] !== "no-cache") {
+    if (req.headers["cache-control"] !== "no-cache") {
       const cachedProblem = await cache.get(key);
       if (cachedProblem) {
         return res.status(200).json(JSON.parse(cachedProblem));
@@ -107,7 +107,7 @@ const getFunctionDeclaration = async (req, res) => {
   const key = `problem:${id}:func:${language}`;
 
   try {
-    if (req.headers["Cache-Control"] !== "no-cache") {
+    if (req.headers["cache-control"] !== "no-cache") {
       const cachedFunc = await cache.get(key);
       if (cachedFunc) {
         return res.status(200).json(JSON.parse(cachedFunc));
@@ -262,7 +262,7 @@ const search = async (req, res) => {
 
   const key = `problems_search:${term}`;
 
-  if (req.headers["Cache-Control"] !== "no-cache") {
+  if (req.headers["cache-control"] !== "no-cache") {
     const cached = await cache.get(key);
     if (cached) {
       return res.status(200).json(JSON.parse(cached));
@@ -278,6 +278,11 @@ const search = async (req, res) => {
           "path": "title",
           "fuzzy": {}
         }
+      }
+    },
+    {
+      "$project": {
+        "description": 0,
       }
     }
   ]);

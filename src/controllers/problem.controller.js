@@ -20,10 +20,19 @@ const getAll = async (req, res) => {
       }
     }
 
-    const problems = await Problem.find({}, { description: 0 }).limit(limit).skip((page - 1) * limit);
-    await cache.set(key, JSON.stringify(problems), "EX", 600);
+    const [count, problems] = await Promise.all([
+      Problem.countDocuments(),
+      Problem.find({}, { description: 0 }).limit(limit).skip((page - 1) * limit)
+    ]);
 
-    return res.status(200).json(problems);
+    const response = {
+      maxPage: Math.ceil(count / limit),
+      data: problems,
+    };
+
+    await cache.set(key, JSON.stringify(response), "EX", 600);
+
+    return res.status(200).json(response);
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }

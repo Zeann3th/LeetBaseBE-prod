@@ -17,14 +17,23 @@ const getAll = async (req, res) => {
       }
     }
 
-    const users = await User.find().limit(limit).skip((page - 1) * limit);
-    await cache.set(key, JSON.stringify(users), "EX", 600);
+    const [count, users] = await Promise.all([
+      User.countDocuments(),
+      User.find().limit(limit).skip(limit * (page - 1))
+    ]);
 
-    res.status(200).json(users);
+    const response = {
+      maxPage: Math.ceil(count / limit),
+      data: users,
+    };
+
+    await cache.set(key, JSON.stringify(response), "EX", 600);
+
+    res.status(200).json(response);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-}
+};
 
 const getById = async (req, res) => {
   const id = sanitize(req.params.id, "mongo");
@@ -53,7 +62,7 @@ const getById = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-}
+};
 
 const getProfile = async (req, res) => {
   const id = req.user.sub;
@@ -82,7 +91,7 @@ const getProfile = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-}
+};
 
 const update = async (req, res) => {
   const id = sanitize(req.params.id, "mongo");
@@ -111,7 +120,7 @@ const update = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-}
+};
 
 const getSubmissionHistory = async (req, res) => {
   const id = req.user.sub;
@@ -141,7 +150,7 @@ const getSubmissionHistory = async (req, res) => {
     const query = {
       user: id,
       ...(problem && { problem }),
-    }
+    };
 
     const submissions = await Submission.find(query).limit(limit).skip((page - 1) * limit);
     await cache.set(key, JSON.stringify(submissions), "EX", 600);
@@ -150,7 +159,7 @@ const getSubmissionHistory = async (req, res) => {
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
-}
+};
 
 const userController = {
   getAll,

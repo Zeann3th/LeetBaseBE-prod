@@ -19,7 +19,7 @@ router.get("/:id/leaderboards", verifyUser, problemController.getLeaderboard);
 
 router.post("/", verifyUser, verifyAdmin, problemController.create);
 
-router.post("/:id/upload", upload.single("file"), verifyUser, verifyAdmin, problemController.upload);
+router.post("/:id/upload", verifyUser, verifyAdmin, upload.single("file"), problemController.upload);
 
 router.patch("/:id", verifyUser, verifyAdmin, problemController.update);
 

@@ -8,8 +8,8 @@ import { commentMarkers } from "../config/markers.js";
 const getAll = async (req, res) => {
   const problemId = sanitize(req.query.problemId, "mongo");
   const language = sanitize(req.query.language, "string");
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
+  const page = sanitize(req.query.page, "number") || 1;
+  const limit = sanitize(req.query.limit, "number") || 10;
 
   try {
     const query = {

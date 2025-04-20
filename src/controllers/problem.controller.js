@@ -343,6 +343,11 @@ const getProblemSolutions = async (req, res) => {
     return res.status(400).json({ message: "Missing path id" });
   }
 
+  const problem = await Problem.findById(id);
+  if (!problem) {
+    return res.status(404).json({ message: "Problem not found" });
+  }
+
   const query = {
     "solution.problem": id,
     ...(language && { "solution.language": language.toLowerCase() }),

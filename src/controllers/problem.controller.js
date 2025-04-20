@@ -4,6 +4,7 @@ import { sanitize } from "../utils.js";
 import s3 from "../services/storage.js";
 import Submission from "../models/Submission.js";
 import DailyProblem from "../models/DailyProblem.js";
+import Discussion from "../models/Discussion.js";
 import { commentMarkers } from "../config/markers.js";
 
 const getAll = async (req, res) => {
@@ -332,6 +333,44 @@ const getDailies = async (req, res) => {
   }
 };
 
+const getProblemSolutions = async (req, res) => {
+  const id = sanitize(req.params.id, "mongo");
+  const language = sanitize(req.query.language, "string");
+  const page = sanitize(req.query.page, "number") || 1;
+  const limit = sanitize(req.query.limit, "number") || 10;
+
+  if (!id) {
+    return res.status(400).json({ message: "Missing path id" });
+  }
+
+  const problem = await Problem.findById(id);
+  if (!problem) {
+    return res.status(404).json({ message: "Problem not found" });
+  }
+
+  const query = {
+    "solution.problem": id,
+    ...(language && { "solution.language": language.toLowerCase() }),
+  }
+
+  try {
+    const [count, solutions] = await Promise.all([
+      Discussion.countDocuments(query),
+      Discussion.find(query).sort({ createdAt: -1 }).limit(limit).skip((page - 1) * limit)
+    ]);
+    if (!solutions) {
+      return res.status(404).json({ message: "Solutions not found" });
+    }
+
+    res.status(200).json({
+      maxPage: Math.ceil(count / limit),
+      data: solutions
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const extractCode = (content, language) => {
   if (!commentMarkers[language]) {
     throw new Error(`Unsupported language: ${language}`);
@@ -369,6 +408,7 @@ const problemController = {
   getLeaderboard,
   getDailies,
   getFunctionDeclaration,
+  getProblemSolutions,
 };
 
 export default problemController;

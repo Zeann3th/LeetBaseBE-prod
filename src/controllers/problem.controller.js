@@ -6,14 +6,30 @@ import Submission from "../models/Submission.js";
 import DailyProblem from "../models/DailyProblem.js";
 import Discussion from "../models/Discussion.js";
 import { commentMarkers } from "../config/markers.js";
+import Auth from "../models/Auth.js";
+import jwt from "jsonwebtoken";
 
 const getAll = async (req, res) => {
   const limit = sanitize(req.query.limit, "number") || 10;
   const page = sanitize(req.query.page, "number") || 1;
+  const auth = req.headers["authorization"] || null;
 
-  const key = `problems:${limit}:${page}`;
+  let key = `problems:${limit}:${page}`;
+  let userId = null;
 
   try {
+    if (auth) {
+      const token = auth.split(" ")[1];
+      try {
+        const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
+        if (decoded?.sub) {
+          userId = decoded.sub;
+          key = `problems:${limit}:${page}:user:${userId}`;
+        }
+      } catch (tokenErr) {
+      }
+    }
+
     if (req.headers["cache-control"] !== "no-cache") {
       const cachedProblems = await cache.get(key);
       if (cachedProblems) {
@@ -23,16 +39,50 @@ const getAll = async (req, res) => {
 
     const [count, problems] = await Promise.all([
       Problem.countDocuments(),
-      Problem.find({}, { description: 0 }).limit(limit).skip((page - 1) * limit)
+      Problem.find({}, { description: 0 }).limit(limit).skip((page - 1) * limit),
     ]);
+
+    if (!userId) {
+      const response = {
+        maxPage: Math.ceil(count / limit),
+        data: problems,
+      };
+      await cache.set(key, JSON.stringify(response), "EX", 600);
+      return res.status(200).json(response);
+    }
+
+    const user = await Auth.findById(userId);
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+    if (!user.isAuthenticated) {
+      return res.status(401).json({ message: "User is not authenticated" });
+    }
+    if (!user.isEmailVerified) {
+      return res.status(403).json({ message: "Email is not verified" });
+    }
+
+    const solved = await Submission.find(
+      { status: "ACCEPTED", user: userId },
+      { problem: 1 }
+    ).distinct("problem");
+
+    const solvedIds = new Set(solved.map((id) => id.toString()));
+
+    const problemsWithSolved = problems.map((problem) => {
+      const isSolved = solvedIds.has(problem._id.toString());
+      return {
+        ...problem.toObject(),
+        isSolved,
+      };
+    });
 
     const response = {
       maxPage: Math.ceil(count / limit),
-      data: problems,
+      data: problemsWithSolved,
     };
 
     await cache.set(key, JSON.stringify(response), "EX", 600);
-
     return res.status(200).json(response);
   } catch (err) {
     return res.status(500).json({ message: err.message });

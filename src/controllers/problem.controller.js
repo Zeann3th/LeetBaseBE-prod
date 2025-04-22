@@ -22,7 +22,7 @@ const getAll = async (req, res) => {
       const token = auth.split(" ")[1];
       try {
         const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
-        if (decoded && decoded.sub) {
+        if (decoded?.sub) {
           userId = decoded.sub;
           key = `problems:${limit}:${page}:user:${userId}`;
         }
@@ -67,10 +67,10 @@ const getAll = async (req, res) => {
       { problem: 1 }
     ).distinct("problem");
 
-    const solvedIds = solved.map((id) => id.toString());
+    const solvedIds = new Set(solved.map((id) => id.toString()));
 
     const problemsWithSolved = problems.map((problem) => {
-      const isSolved = solvedIds.includes(problem._id.toString());
+      const isSolved = solvedIds.has(problem._id.toString());
       return {
         ...problem.toObject(),
         isSolved,

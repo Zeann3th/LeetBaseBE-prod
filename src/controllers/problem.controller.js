@@ -62,24 +62,24 @@ const getAll = async (req, res) => {
       return res.status(403).json({ message: "Email is not verified" });
     }
 
-    const solved = await Submission.find(
-      { status: "ACCEPTED", user: userId },
-      { problem: 1 }
-    ).distinct("problem");
+    const interacted = await Submission.find(
+      { user: userId },
+      { problem: 1, status: 1 }
+    );
 
-    const solvedIds = new Set(solved.map((id) => id.toString()));
+    const solvedIds = new Set(interacted.filter((s) => s.status === "ACCEPTED").map((s) => s.problem.toString()));
+    const interactedIds = new Set(interacted.map((s) => s.problem.toString()));
 
-    const problemsWithSolved = problems.map((problem) => {
-      const isSolved = solvedIds.has(problem._id.toString());
+    const problemsWithStatus = problems.map((problem) => {
       return {
         ...problem.toObject(),
-        isSolved,
+        status: solvedIds.has(problem._id.toString()) ? "SOLVED" : interactedIds.has(problem._id.toString()) ? "ATTEMPTED" : "UNSOLVED",
       };
     });
 
     const response = {
       maxPage: Math.ceil(count / limit),
-      data: problemsWithSolved,
+      data: problemsWithStatus,
     };
 
     await cache.set(key, JSON.stringify(response), "EX", 600);

@@ -111,11 +111,7 @@ const create = async (req, res) => {
       user: req.user.sub,
       problem: problemId,
       language,
-      status: compile?.stderr
-        ? "COMPILE_ERROR"
-        : run?.stderr
-          ? "WRONG_ANSWER"
-          : "ACCEPTED",
+      status: compile?.stderr ? "COMPILE_ERROR" : run?.stderr ? "WRONG_ANSWER" : "ACCEPTED",
       code,
       error: compile?.stderr || run?.stderr || null,
       runtime: end - start,

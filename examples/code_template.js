@@ -25,19 +25,31 @@ const testCases = [
 ];
 
 function runTests() {
-  let count = 0;
-  for (const { input, expected } of testCases) {
+  let passedCount = 0;
+  const totalCount = testCases.length;
+
+  for (let i = 0; i < testCases.length; i++) {
+    const { input, expected } = testCases[i];
     const [nums1, m, nums2, n] = JSON.parse(JSON.stringify(input));
+
     merge(nums1, m, nums2, n);
+
     if (JSON.stringify(nums1) !== JSON.stringify(expected)) {
-      const error = new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(nums1)}`);
-      console.error(error);
-      throw error;
+      const errorMessage = {
+        passed: `${passedCount}/${totalCount}`,
+        message: `Test case ${i + 1} failed: expected ${JSON.stringify(expected)}, but got ${JSON.stringify(nums1)}`,
+      };
+
+      throw new Error(errorMessage);
     }
-    count++;
+
+    passedCount++;
   }
-  console.log("All %d tests passed", count);
+
+  console.log({
+    passed: `${passedCount}/${totalCount}`,
+    message: "All tests passed!"
+  });
 }
 
 runTests();
-

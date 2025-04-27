@@ -199,12 +199,11 @@ const getUploadUrl = async (req, res) => {
   }
 
   const normalizedLanguage = String(language).toLowerCase();
-  if (!problem.supports?.includes(normalizedLanguage)) {
-    problem.supports.push(normalizedLanguage);
-    await problem.save();
-  }
 
-  const url = await s3.getSignedUploadURL(`${id}/templates/${normalizedLanguage}`);
+  const [url, _] = await Promise.all([
+    s3.getSignedUploadURL(`${id}/templates/${normalizedLanguage}`),
+    Problem.findByIdAndUpdate(id, { $addToSet: { supports: normalizedLanguage } }, { new: false })
+  ]);
   return res.status(200).json({ url });
 };
 

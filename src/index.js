@@ -16,7 +16,7 @@ const port = process.env.PORT || 8000;
 // Security
 app.use(cors({
   origin: process.env.APP_URL || "*",
-  allowedHeaders: ["Content-Type", "Authorization", "Cache-Control"],
+  allowedHeaders: ["Content-Type", "Authorization", "Cache-Control", "x-csrf-token"],
   credentials: true,
 }));
 app.use(helmet());

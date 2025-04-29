@@ -38,11 +38,7 @@ app.get("/healthz", (req, res) => {
 
 app.get("/csrf-token", (req, res) => {
   const csrfToken = crypto.randomUUID();
-  const csrfOptions = { httpOnly: true, secure: isProduction, path: "/", partitioned: true }
-  if (isProduction) {
-    csrfOptions.sameSite = "none";
-  }
-  res.cookie("_csrf", csrfToken, csrfOptions);
+  res.cookie("_csrf", csrfToken, { httpOnly: true, secure: isProduction, path: "/", partitioned: true, sameSite: isProduction ? "none" : "lax" });
   res.status(200).json({ csrfToken });
 });
 

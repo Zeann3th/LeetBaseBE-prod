@@ -232,16 +232,8 @@ const logout = async (req, res) => {
     await user.updateOne({ refreshToken: null, isAuthenticated: false });
   }
 
-  const cookieOptions = { httpOnly: true, secure: isProduction, path: "/", partitioned: true };
-  const csrfOptions = { httpOnly: true, secure: isProduction, path: "/", partitioned: true };
-
-  if (isProduction) {
-    cookieOptions.sameSite = "none";
-    csrfOptions.sameSite = "none";
-  }
-
-  res.clearCookie("refresh_token", cookieOptions);
-  res.clearCookie("_csrf", csrfOptions);
+  res.clearCookie("refresh_token", { httpOnly: true, secure: isProduction, path: "/", partitioned: true, sameSite: isProduction ? "none" : "lax" });
+  res.clearCookie("_csrf", { httpOnly: true, secure: isProduction, path: "/", partitioned: true, sameSite: isProduction ? "none" : "lax" });
   return res.status(204).send();
 };
 

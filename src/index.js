@@ -40,9 +40,9 @@ app.get("/csrf-token", (req, res) => {
   const csrfToken = crypto.randomUUID();
   const csrfOptions = { httpOnly: true, secure: isProduction, path: "/", partitioned: true }
   if (isProduction) {
-    csrdOptions.sameSite = "none";
+    csrfOptions.sameSite = "none";
   }
-  res.cookie("_csrf", csrfToken, csrdOptions);
+  res.cookie("_csrf", csrfToken, csrfOptions);
   res.status(200).json({ csrfToken });
 });
 

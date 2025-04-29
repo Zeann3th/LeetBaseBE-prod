@@ -67,8 +67,16 @@ const register = async (req, res) => {
 
       await auth.updateOne({ refreshToken, isAuthenticated: true });
 
-      res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: isProduction, sameSite: "none", path: "/", partitioned: true, maxAge: 24 * 60 * 60 * 1000 });
-      res.cookie("_csrf", csrfToken, { httpOnly: true, secure: isProduction, sameSite: "none", path: "/", partitioned: true });
+      const cookieOptions = { httpOnly: true, secure: isProduction, path: "/", partitioned: true, maxAge: 24 * 60 * 60 * 1000 };
+      const csrfOptions = { httpOnly: true, secure: isProduction, path: "/", partitioned: true };
+
+      if (isProduction) {
+        cookieOptions.sameSite = "none";
+        csrfOptions.sameSite = "none";
+      }
+
+      res.cookie("refresh_token", refreshToken, cookieOptions);
+      res.cookie("_csrf", csrfToken, csrfOptions);
 
       mail.sendVerifyEmail(email);
       return res.status(201).json({ accessToken, csrfToken });
@@ -176,8 +184,16 @@ const login = async (req, res) => {
 
     await auth.updateOne({ refreshToken, isAuthenticated: true });
 
-    res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: isProduction, sameSite: "none", path: "/", partitioned: true, maxAge: 24 * 60 * 60 * 1000 });
-    res.cookie("_csrf", csrfToken, { httpOnly: true, secure: isProduction, sameSite: "none", path: "/", partitioned: true });
+    const cookieOptions = { httpOnly: true, secure: isProduction, path: "/", partitioned: true, maxAge: 24 * 60 * 60 * 1000 };
+    const csrfOptions = { httpOnly: true, secure: isProduction, path: "/", partitioned: true };
+
+    if (isProduction) {
+      cookieOptions.sameSite = "none";
+      csrfOptions.sameSite = "none";
+    }
+
+    res.cookie("refresh_token", refreshToken, cookieOptions);
+    res.cookie("_csrf", csrfToken, csrfOptions);
 
     return res.status(200).json({ accessToken, csrfToken });
   } catch (err) {
@@ -232,8 +248,16 @@ const logout = async (req, res) => {
     await user.updateOne({ refreshToken: null, isAuthenticated: false });
   }
 
-  res.clearCookie("refresh_token", { httpOnly: true, secure: isProduction, sameSite: "none", path: "/", partitioned: true });
-  res.clearCookie("_csrf", { httpOnly: true, secure: isProduction, sameSite: "none", path: "/", partitioned: true });
+  const cookieOptions = { httpOnly: true, secure: isProduction, path: "/", partitioned: true };
+  const csrfOptions = { httpOnly: true, secure: isProduction, path: "/", partitioned: true };
+
+  if (isProduction) {
+    cookieOptions.sameSite = "none";
+    csrfOptions.sameSite = "none";
+  }
+
+  res.clearCookie("refresh_token", cookieOptions);
+  res.clearCookie("_csrf", csrfOptions);
   return res.status(204).send();
 };
 

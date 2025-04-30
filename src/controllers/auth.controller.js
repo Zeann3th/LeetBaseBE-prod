@@ -67,8 +67,8 @@ const register = async (req, res) => {
 
       await auth.updateOne({ refreshToken, isAuthenticated: true });
 
-      res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: isProduction, path: "/", partitioned: true, maxAge: 24 * 60 * 60 * 1000, sameSite: isProduction ? "none" : "lax" });
-      res.cookie("_csrf", csrfToken, { httpOnly: true, secure: isProduction, path: "/", partitioned: true, sameSite: isProduction ? "none" : "lax" });
+      res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: isProduction, path: "/", maxAge: 24 * 60 * 60 * 1000, sameSite: isProduction ? "none" : "lax" });
+      res.cookie("_csrf", csrfToken, { httpOnly: true, secure: isProduction, path: "/", sameSite: isProduction ? "none" : "lax" });
 
       mail.sendVerifyEmail(email);
       return res.status(201).json({ accessToken, csrfToken });
@@ -176,8 +176,10 @@ const login = async (req, res) => {
 
     await auth.updateOne({ refreshToken, isAuthenticated: true });
 
-    res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: isProduction, path: "/", partitioned: true, maxAge: 24 * 60 * 60 * 1000, sameSite: isProduction ? "none" : "lax" });
-    res.cookie("_csrf", csrfToken, { httpOnly: true, secure: isProduction, path: "/", partitioned: true, sameSite: isProduction ? "none" : "lax" });
+    res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: isProduction, path: "/", maxAge: 24 * 60 * 60 * 1000, sameSite: isProduction ? "none" : "lax" });
+    res.cookie("_csrf", csrfToken, {
+      httpOnly: true, secure: isProduction, path: "/", sameSite: isProduction ? "none" : "lax"
+    });
 
     return res.status(200).json({ accessToken, csrfToken });
   } catch (err) {
@@ -344,8 +346,8 @@ const handleOAuthCallback = async (req, res) => {
 
     await user.updateOne({ refreshToken });
 
-    res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: isProduction, maxAge: 24 * 60 * 60 * 1000, path: "/", partitioned: true, sameSite: "none" });
-    res.cookie("_csrf", csrfToken, { httpOnly: true, secure: isProduction, sameSite: "none", path: "/", partitioned: true });
+    res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: isProduction, maxAge: 24 * 60 * 60 * 1000, path: "/", sameSite: "none" });
+    res.cookie("_csrf", csrfToken, { httpOnly: true, secure: isProduction, sameSite: "none", path: "/" });
 
     return res.redirect(`${process.env.APP_URL}?accessToken=${accessToken}&csrfToken=${csrfToken}`);
   } catch (err) {

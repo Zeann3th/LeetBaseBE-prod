@@ -4,6 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import crypto from 'crypto';
 import cookieParser from 'cookie-parser';
 import { ipLimiter } from './middlewares/ratelimit.js';
 import { v1Router, v2Router } from './routes/index.js';

@@ -169,15 +169,19 @@ const getTodoList = async (req, res) => {
   if (!id) {
     return res.status(401).json({ message: "Missing user credentials" });
   }
-  const [count, todos] = await Promise.all([
-    Todo.countDocuments({ user: id }),
-    Todo.find({ user: id }).populate("problem", "-description").limit(limit).skip(limit * (page - 1))
-  ]);
+  try {
+    const [count, todos] = await Promise.all([
+      Todo.countDocuments({ user: id }),
+      Todo.find({ user: id }).populate("problem", "-description").limit(limit).skip(limit * (page - 1))
+    ]);
 
-  return res.status(200).json({
-    maxPage: Math.ceil(count / limit),
-    data: todos,
-  });
+    return res.status(200).json({
+      maxPage: Math.ceil(count / limit),
+      data: todos,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
 };
 
 const addProblemsToTodo = async (req, res) => {
@@ -228,7 +232,7 @@ const removeProblemFromTodo = async (req, res) => {
 
   try {
     const todo = await Todo.deleteMany({ user: id, problem });
-    if (!todo) {
+    if (todo.deletedCount === 0) {
       return res.status(404).json({ message: "Todo not found" });
     }
     return res.status(204).send();
@@ -249,13 +253,3 @@ const userController = {
 };
 
 export default userController;
-
-
-
-
-
-
-
-
-
-

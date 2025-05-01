@@ -7,7 +7,6 @@ import mail from "../services/mail.js";
 import User from "../models/User.js";
 import crypto from "crypto";
 import axios from "axios";
-import path from "path";
 
 const saltRounds = 10;
 

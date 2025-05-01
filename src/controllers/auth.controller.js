@@ -7,6 +7,7 @@ import mail from "../services/mail.js";
 import User from "../models/User.js";
 import crypto from "crypto";
 import axios from "axios";
+import path from "path";
 
 const saltRounds = 10;
 
@@ -67,8 +68,8 @@ const register = async (req, res) => {
 
       await auth.updateOne({ refreshToken, isAuthenticated: true });
 
-      res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: isProduction, path: "/", maxAge: 24 * 60 * 60 * 1000, sameSite: isProduction ? "none" : "lax" });
-      res.cookie("_csrf", csrfToken, { httpOnly: true, secure: isProduction, path: "/", sameSite: isProduction ? "none" : "lax" });
+      res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: isProduction, path: "/", maxAge: 24 * 60 * 60 * 1000, sameSite: isProduction ? "none" : "lax", partitioned: isProduction });
+      res.cookie("_csrf", csrfToken, { httpOnly: true, secure: isProduction, path: "/", sameSite: isProduction ? "none" : "lax", partitioned: isProduction });
 
       mail.sendVerifyEmail(email);
       return res.status(201).json({ accessToken, csrfToken });
@@ -176,10 +177,8 @@ const login = async (req, res) => {
 
     await auth.updateOne({ refreshToken, isAuthenticated: true });
 
-    res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: isProduction, path: "/", maxAge: 24 * 60 * 60 * 1000, sameSite: isProduction ? "none" : "lax" });
-    res.cookie("_csrf", csrfToken, {
-      httpOnly: true, secure: isProduction, path: "/", sameSite: isProduction ? "none" : "lax"
-    });
+    res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: isProduction, path: "/", maxAge: 24 * 60 * 60 * 1000, sameSite: isProduction ? "none" : "lax", partitioned: isProduction });
+    res.cookie("_csrf", csrfToken, { httpOnly: true, secure: isProduction, path: "/", sameSite: isProduction ? "none" : "lax", partitioned: isProduction });
 
     return res.status(200).json({ accessToken, csrfToken });
   } catch (err) {
@@ -234,8 +233,8 @@ const logout = async (req, res) => {
     await user.updateOne({ refreshToken: null, isAuthenticated: false });
   }
 
-  res.clearCookie("refresh_token", { httpOnly: true, secure: isProduction, path: "/", partitioned: true, sameSite: isProduction ? "none" : "lax" });
-  res.clearCookie("_csrf", { httpOnly: true, secure: isProduction, path: "/", partitioned: true, sameSite: isProduction ? "none" : "lax" });
+  res.clearCookie("refresh_token", { httpOnly: true, secure: isProduction, path: "/", partitioned: isProduction, sameSite: isProduction ? "none" : "lax" });
+  res.clearCookie("_csrf", { httpOnly: true, secure: isProduction, path: "/", partitioned: isProduction, sameSite: isProduction ? "none" : "lax" });
   return res.status(204).send();
 };
 
@@ -346,8 +345,8 @@ const handleOAuthCallback = async (req, res) => {
 
     await user.updateOne({ refreshToken });
 
-    res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: isProduction, maxAge: 24 * 60 * 60 * 1000, path: "/", sameSite: "none" });
-    res.cookie("_csrf", csrfToken, { httpOnly: true, secure: isProduction, sameSite: "none", path: "/" });
+    res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: isProduction, maxAge: 24 * 60 * 60 * 1000, path: "/", sameSite: isProduction ? "none" : "lax", partitioned: isProduction });
+    res.cookie("_csrf", csrfToken, { httpOnly: true, secure: isProduction, path: "/", sameSite: isProduction ? "none" : "lax", partitioned: isProduction });
 
     return res.redirect(`${process.env.APP_URL}?accessToken=${accessToken}&csrfToken=${csrfToken}`);
   } catch (err) {

@@ -19,7 +19,7 @@ const getAll = async (req, res) => {
     }
     const [count, submissions] = await Promise.all([
       Submission.countDocuments(query),
-      Submission.find(query).sort({ createdAt: 1 }).limit(limit).skip((page - 1) * limit)
+      Submission.find(query).sort({ createdAt: -1 }).limit(limit).skip((page - 1) * limit)
     ]);
 
     res.status(200).json({

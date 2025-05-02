@@ -19,7 +19,7 @@ const getAll = async (req, res) => {
 
     const [count, discussions] = await Promise.all([
       Discussion.countDocuments(),
-      Discussion.find().limit(limit).skip(limit * (page - 1))
+      Discussion.find().sort({ createdAt: -1 }).limit(limit).skip(limit * (page - 1)).populate("author")
     ]);
 
     const response = {

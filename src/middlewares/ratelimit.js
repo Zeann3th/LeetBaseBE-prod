@@ -11,11 +11,11 @@ const ipLimiter = rateLimit({
       req.connection.remoteAddress ||
       "";
   }
-})
+});
 
 const emailLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 3,
+  max: 6,
   message: "Too many requests to this email, please try again after 1 hour",
   keyGenerator: function(req) {
     return req.body.email;

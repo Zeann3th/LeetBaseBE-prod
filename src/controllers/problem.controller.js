@@ -346,46 +346,32 @@ const search = async (req, res) => {
 
     const skip = (page - 1) * limit;
 
-    const [[{ count }], problems] = await Promise.all([
-      Problem.aggregate([
-        {
-          "$search": {
-            "index": "problemsIdx",
-            "text": {
-              "query": term,
-              "path": "title",
-              "fuzzy": {}
-            }
+    const [result] = await Problem.aggregate([
+      {
+        "$search": {
+          "index": "problemsIdx",
+          "text": {
+            "query": term,
+            "path": "title",
+            "fuzzy": {},
           }
-        },
-        {
-          "$count": "count"
         }
-      ]),
-      Problem.aggregate([
-        {
-          "$search": {
-            "index": "problemsIdx",
-            "text": {
-              "query": term,
-              "path": "title",
-              "fuzzy": {}
-            }
-          }
-        },
-        {
-          "$project": {
-            "description": 0,
-          }
-        },
-        {
-          "$skip": skip
-        },
-        {
-          "$limit": limit
+      },
+      {
+        "$facet": {
+          "count": [{ "$count": "count" }],
+          "problems": [
+            { "$project": { "description": 0 } },
+            { "$sort": { "createdAt": -1 } },
+            { "$skip": skip },
+            { "$limit": limit }
+          ]
         }
-      ])
-    ]);
+      }
+    ])
+
+    const count = result.count[0]?.count || 0;
+    const problems = result.problems || [];
 
     if (!problems || problems.length === 0) {
       return res.status(200).json({

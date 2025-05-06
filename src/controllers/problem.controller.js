@@ -63,7 +63,7 @@ const getAll = async (req, res) => {
     }
 
     const interacted = await Submission.find(
-      { user: userId },
+      { user: userId, problem: { $in: problems.map((p) => p._id) } },
       { problem: 1, status: 1 }
     );
 
@@ -362,7 +362,6 @@ const search = async (req, res) => {
           "count": [{ "$count": "count" }],
           "problems": [
             { "$project": { "description": 0 } },
-            { "$sort": { "createdAt": -1 } },
             { "$skip": skip },
             { "$limit": limit }
           ]
@@ -401,7 +400,7 @@ const search = async (req, res) => {
     }
 
     const interacted = await Submission.find(
-      { user: userId },
+      { user: userId, problem: { $in: problems.map((p) => p._id) } },
       { problem: 1, status: 1 }
     );
 
@@ -415,7 +414,6 @@ const search = async (req, res) => {
       interacted.map((s) => s.problem.toString())
     );
 
-    // Add status to each problem
     const problemsWithStatus = problems.map((problem) => {
       return {
         ...problem,
@@ -435,7 +433,6 @@ const search = async (req, res) => {
     await cache.set(key, JSON.stringify(response), "EX", 600);
     return res.status(200).json(response);
   } catch (err) {
-    console.error("Search error:", err);
     return res.status(500).json({ message: err.message });
   }
 };

@@ -464,11 +464,16 @@ const getLeaderboard = async (req, res) => {
 };
 
 const getDailies = async (req, res) => {
-  const month = sanitize(req.query.month, "number") || new Date().getMonth();
+  let month = sanitize(req.query.month, "number") || new Date().getMonth() + 1;
   const year = sanitize(req.query.year, "number") || new Date().getFullYear();
 
-  const start = new Date(year, month - 1, 1);
-  const end = new Date(year, month, 0);
+  month = month - 1;
+  if (month < 0 || month > 11) {
+    return res.status(400).json({ message: "Invalid month" });
+  }
+
+  const start = new Date(year, month, 1);
+  const end = new Date(year, month + 1, 0);
 
   try {
     const problems = await DailyProblem.find({ date: { $gte: start, $lte: end } }).populate("problem", "-description");

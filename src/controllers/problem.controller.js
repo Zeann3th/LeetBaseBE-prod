@@ -466,8 +466,8 @@ const getDailies = async (req, res) => {
   const month = sanitize(req.query.month, "number") || new Date().getMonth();
   const year = sanitize(req.query.year, "number") || new Date().getFullYear();
 
-  const start = new Date(year, month, 1);
-  const end = new Date(year, month + 1, 0);
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 0);
 
   try {
     const problems = await DailyProblem.find({ date: { $gte: start, $lte: end } }).populate("problem", "-description");

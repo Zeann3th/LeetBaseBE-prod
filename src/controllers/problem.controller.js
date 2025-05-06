@@ -325,6 +325,10 @@ const search = async (req, res) => {
       return res.status(400).send({ message: "Invalid search term" });
     }
 
+    if (term.length < 2) {
+      return res.status(400).send({ message: "Search term must be at least 2 characters long" });
+    }
+
     if (auth) {
       const token = auth.split(" ")[1];
       try {
@@ -433,7 +437,7 @@ const search = async (req, res) => {
     await cache.set(key, JSON.stringify(response), "EX", 600);
     return res.status(200).json(response);
   } catch (err) {
-    return res.status(500).json({ message: err.message });
+    return res.status(500).json({ message: "An error occurred during search" });
   }
 };
 

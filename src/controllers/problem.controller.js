@@ -104,7 +104,7 @@ const getById = async (req, res) => {
         const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
         if (decoded?.sub) {
           userId = decoded.sub;
-          key = `problems:${limit}:${page}:user:${userId}`;
+          key = `problems:${id}:user:${userId}`;
         }
       } catch (tokenErr) {
       }
@@ -135,7 +135,7 @@ const getById = async (req, res) => {
       return res.status(401).json({ message: "User is not authenticated" });
     }
 
-    const interacted = await Submission.find({ user: req.userId, problem: id }, { status: 1 });
+    const interacted = await Submission.find({ user: req.user.sub, problem: id }, { status: 1 });
     const solved = interacted.some((s) => s.status === "ACCEPTED");
 
     const response = {

@@ -9,13 +9,18 @@ export const verifyAdmin = (req, res, next) => {
 }
 
 export const verifyUser = async (req, res, next) => {
-  const token = req.headers["authorization"];
-  if (!token) {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader) {
     return res.status(403).send({ message: "Access token is required for authentication" });
   }
 
+  const [scheme, token] = authHeader.split(" ");
+  if (scheme !== "Bearer" || !token) {
+    return res.status(400).send({ message: "Invalid authorization header format" });
+  }
+
   try {
-    const decoded = jwt.verify(token.split(" ")[1], process.env.TOKEN_SECRET);
+    const decoded = jwt.verify(authHeader.split(" ")[1], process.env.TOKEN_SECRET);
 
     const user = await Auth.findById(decoded.sub);
     if (!user.isAuthenticated) {
@@ -55,13 +60,18 @@ export const verifyUser = async (req, res, next) => {
  */
 export const createAuthMiddleware = ({ requireEmailVerified = true, requireCsrf = true, roles = [], allowService = false } = {}) => {
   return async (req, res, next) => {
-    const token = req.headers["authorization"];
-    if (!token) {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader) {
       return res.status(403).send({ message: "Access token is required for authentication" });
     }
 
+    const [scheme, token] = authHeader.split(" ");
+    if (scheme !== "Bearer" || !token) {
+      return res.status(400).send({ message: "Invalid authorization header format" });
+    }
+
     try {
-      const decoded = jwt.verify(token.split(" ")[1], process.env.TOKEN_SECRET);
+      const decoded = jwt.verify(authHeader.split(" ")[1], process.env.TOKEN_SECRET);
       const user = await Auth.findById(decoded.sub);
 
       if (!user?.isAuthenticated) {
@@ -82,21 +92,23 @@ export const createAuthMiddleware = ({ requireEmailVerified = true, requireCsrf 
         return res.status(403).send({ message: "Insufficient permissions" });
       }
 
-      req.user = decoded;
+      const { password, refreshToken, ...safeUser } = user;
+
+      req.user = {
+        ...decoded,
+        ...safeUser.toObject(),
+      };
       return next();
 
     } catch (err) {
-      const errorMap = {
-        TokenExpiredError: 401,
-        JsonWebTokenError: 401,
-        NotBeforeError: 401,
+      const jwtErrors = {
+        TokenExpiredError: { code: 401, msg: "Token has expired" },
+        JsonWebTokenError: { code: 401, msg: "Invalid token" },
+        NotBeforeError: { code: 401, msg: "Token is not yet active" },
       };
-      const errorMessageMap = {
-        TokenExpiredError: "Token has expired",
-        JsonWebTokenError: "Invalid token",
-        NotBeforeError: "Token is not yet active",
-      };
-      return res.status(errorMap[err.name] || 500).send({ message: errorMessageMap[err.name] || "Authentication error" });
+
+      const { code, msg } = jwtErrors[err.name] || { code: 500, msg: "Authentication error" };
+      return res.status(code).send({ message: msg });
     }
   };
 };

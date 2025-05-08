@@ -88,6 +88,9 @@ const getAll = async (req, res) => {
 
 const getById = async (req, res) => {
   const id = sanitize(req.params.id, "mongo");
+  const auth = req.headers["authorization"] || null;
+  let userId = null;
+
   if (!id) {
     return res.status(400).json({ message: "Missing path id" });
   }
@@ -95,6 +98,18 @@ const getById = async (req, res) => {
   const key = `problem:${id}`;
 
   try {
+    if (auth) {
+      const token = auth.split(" ")[1];
+      try {
+        const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
+        if (decoded?.sub) {
+          userId = decoded.sub;
+          key = `problems:${limit}:${page}:user:${userId}`;
+        }
+      } catch (tokenErr) {
+      }
+    }
+
     if (req.headers["cache-control"] !== "no-cache") {
       const cachedProblem = await cache.get(key);
       if (cachedProblem) {
@@ -105,6 +120,19 @@ const getById = async (req, res) => {
     const problem = await Problem.findById(id);
     if (!problem) {
       return res.status(404).json({ message: "Problem not found" });
+    }
+
+    if (!userId) {
+      await cache.set(key, JSON.stringify(problem), "EX", 600);
+      return res.status(200).json(problem);
+    }
+
+    const user = await Auth.findById(userId);
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+    if (!user.isAuthenticated) {
+      return res.status(401).json({ message: "User is not authenticated" });
     }
 
     const interacted = await Submission.find({ user: req.userId, problem: id }, { status: 1 });

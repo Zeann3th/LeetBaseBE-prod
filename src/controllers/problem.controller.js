@@ -58,9 +58,6 @@ const getAll = async (req, res) => {
     if (!user.isAuthenticated) {
       return res.status(401).json({ message: "User is not authenticated" });
     }
-    if (!user.isEmailVerified) {
-      return res.status(403).json({ message: "Email is not verified" });
-    }
 
     const interacted = await Submission.find(
       { user: userId, problem: { $in: problems.map((p) => p._id) } },
@@ -110,9 +107,17 @@ const getById = async (req, res) => {
       return res.status(404).json({ message: "Problem not found" });
     }
 
-    await cache.set(key, JSON.stringify(problem), "EX", 600);
+    const interacted = await Submission.find({ user: req.userId, problem: id }, { status: 1 });
+    const solved = interacted.some((s) => s.status === "ACCEPTED");
 
-    return res.status(200).json(problem);
+    const response = {
+      ...problem.toObject(),
+      status: interacted ? (solved ? "SOLVED" : "ATTEMPTED") : "UNSOLVED",
+    }
+
+    await cache.set(key, JSON.stringify(response), "EX", 600);
+
+    return res.status(200).json(response);
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
@@ -394,9 +399,6 @@ const search = async (req, res) => {
     }
     if (!user.isAuthenticated) {
       return res.status(401).json({ message: "User is not authenticated" });
-    }
-    if (!user.isEmailVerified) {
-      return res.status(403).json({ message: "Email is not verified" });
     }
 
     const interacted = await Submission.find(

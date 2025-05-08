@@ -20,7 +20,7 @@ export const verifyUser = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(authHeader.split(" ")[1], process.env.TOKEN_SECRET);
+    const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
 
     const user = await Auth.findById(decoded.sub);
     if (!user.isAuthenticated) {
@@ -71,8 +71,8 @@ export const createAuthMiddleware = ({ requireEmailVerified = true, requireCsrf 
     }
 
     try {
-      const decoded = jwt.verify(authHeader.split(" ")[1], process.env.TOKEN_SECRET);
-      const user = await Auth.findById(decoded.sub);
+      const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
+      const user = await Auth.findById(decoded.sub).lean();
 
       if (!user?.isAuthenticated) {
         return res.status(401).send({ message: "User is not authenticated" });
@@ -96,7 +96,7 @@ export const createAuthMiddleware = ({ requireEmailVerified = true, requireCsrf 
 
       req.user = {
         ...decoded,
-        ...safeUser.toObject(),
+        ...safeUser,
       };
       return next();
 

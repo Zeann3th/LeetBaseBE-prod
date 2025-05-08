@@ -135,13 +135,13 @@ const getById = async (req, res) => {
       return res.status(401).json({ message: "User is not authenticated" });
     }
 
-    const interacted = await Submission.find({ user: req.user.sub, problem: id }, { status: 1 });
+    const interacted = await Submission.find({ user: userId, problem: id }, { status: 1 });
     const solved = interacted.some((s) => s.status === "ACCEPTED");
 
     const response = {
       ...problem.toObject(),
       status: interacted.length > 0 ? (solved ? "SOLVED" : "ATTEMPTED") : "UNSOLVED",
-    }
+    };
 
     await cache.set(key, JSON.stringify(response), "EX", 600);
 

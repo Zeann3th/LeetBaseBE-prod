@@ -43,6 +43,16 @@ export const verifyUser = async (req, res, next) => {
   return next();
 };
 
+/**
+ * Creates a configurable authentication middleware
+ * 
+ * @param {Object} options - Middleware configuration options
+ * @param {boolean} [options.requireEmailVerified=true] - Whether to require email verification
+ * @param {boolean} [options.requireCsrf=true] - Whether to enforce CSRF protection
+ * @param {string[]} [options.roles=[]] - Required roles for authorization (empty array = no role restrictions)
+ * @param {boolean} [options.allowService=false] - Whether to allow service token authentication
+ * @returns {Function} Express middleware function
+ */
 export const createAuthMiddleware = ({ requireEmailVerified = true, requireCsrf = true, roles = [], allowService = false } = {}) => {
   return async (req, res, next) => {
     const token = req.headers["authorization"];
@@ -81,7 +91,12 @@ export const createAuthMiddleware = ({ requireEmailVerified = true, requireCsrf 
         JsonWebTokenError: 401,
         NotBeforeError: 401,
       };
-      return res.status(errorMap[err.name] || 500).send({ message: "Authentication error" });
+      const errorMessageMap = {
+        TokenExpiredError: "Token has expired",
+        JsonWebTokenError: "Invalid token",
+        NotBeforeError: "Token is not yet active",
+      };
+      return res.status(errorMap[err.name] || 500).send({ message: errorMessageMap[err.name] || "Authentication error" });
     }
   };
 };

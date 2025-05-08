@@ -112,7 +112,7 @@ const getById = async (req, res) => {
 
     const response = {
       ...problem.toObject(),
-      status: interacted ? (solved ? "SOLVED" : "ATTEMPTED") : "UNSOLVED",
+      status: interacted.length > 0 ? (solved ? "SOLVED" : "ATTEMPTED") : "UNSOLVED",
     }
 
     await cache.set(key, JSON.stringify(response), "EX", 600);

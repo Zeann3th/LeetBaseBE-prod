@@ -95,7 +95,7 @@ const getById = async (req, res) => {
     return res.status(400).json({ message: "Missing path id" });
   }
 
-  const key = `problem:${id}`;
+  let key = `problem:${id}`;
 
   try {
     if (auth) {

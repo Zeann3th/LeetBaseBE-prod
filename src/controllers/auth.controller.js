@@ -342,7 +342,7 @@ const handleOAuthCallback = async (req, res) => {
     const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, { expiresIn: "1d" });
     const csrfToken = crypto.randomUUID();
 
-    await user.updateOne({ refreshToken });
+    await user.updateOne({ refreshToken, isAuthenticated: true });
 
     res.cookie("refresh_token", refreshToken, { httpOnly: true, secure: isProduction, maxAge: 24 * 60 * 60 * 1000, path: "/", sameSite: isProduction ? "none" : "lax", partitioned: isProduction });
     res.cookie("_csrf", csrfToken, { httpOnly: true, secure: isProduction, path: "/", sameSite: isProduction ? "none" : "lax", partitioned: isProduction });

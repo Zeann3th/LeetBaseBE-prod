@@ -126,13 +126,13 @@ const update = async (req, res) => {
       const base64 = file.buffer.toString('base64');
       const dataUri = `data:${file.mimetype};base64,${base64}`;
 
-      cloudinary.uploader.upload(dataUri, {
+      const result = await cloudinary.uploader.upload(dataUri, {
         folder: 'avatars',
         public_id: `lbuser_${req.user.sub}`,
         overwrite: true,
       });
 
-      user.avatar = `https://res.cloudinary.com/${process.env.CLOUDINARY_NAME}/image/upload/avatars/lbuser_${req.user.sub}.png`; // Hack
+      user.avatar = result.secure_url;
     }
 
     await user.save();

@@ -49,11 +49,16 @@ const getById = async (req, res) => {
 
 const create = async (req, res) => {
   const problemId = sanitize(req.body.problemId, "mongo");
-  const language = sanitize(req.body.language, "string");
+  let language = sanitize(req.body.language, "string");
   const code = req.body.code;
 
   if (!problemId || !language || !code) {
     return res.status(400).json({ message: "Missing required fields in payload" });
+  }
+
+  // Exclusion
+  if (language === "cpp") {
+    language = "c++";
   }
 
   try {

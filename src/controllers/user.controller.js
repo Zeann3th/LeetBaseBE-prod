@@ -265,6 +265,7 @@ const removeProblemFromTodo = async (req, res) => {
 
 const getDiscussions = async (req, res) => {
   const id = req.user.sub;
+  const problemId = sanitize(req.query.problemId, "mongo");
   const limit = sanitize(req.query.limit, "number") || 10;
   const page = sanitize(req.query.page, "number") || 1;
   if (!id) {
@@ -272,8 +273,14 @@ const getDiscussions = async (req, res) => {
   }
   try {
     const [count, discussions] = await Promise.all([
-      Discussion.countDocuments({ author: id }),
-      Discussion.find({ author: id })
+      Discussion.countDocuments({
+        author: id,
+        ...(problemId ? { "solution.problem": problemId } : {})
+      }),
+      Discussion.find({
+        author: id,
+        ...(problemId ? { "solution.problem": problemId } : {})
+      })
         .sort({ createdAt: -1 })
         .limit(limit)
         .skip(limit * (page - 1))
